@@ -19,7 +19,16 @@ import (
 
 var (
 	// Global application context
-	GlobalAppCtx = NewAppContext()
+	GlobalAppCtx = &appContext{
+		application:  "unknown-application",
+		startTime:    time.Unix(0, 0),
+		loggers:      make(map[string]*LoggerPair, 0),
+		viperConfigs: make(map[string]*viper.Viper, 0),
+		rkConfigs:    make(map[string]*rk_config.RkConfig, 0),
+		eventFactory: rk_query.NewEventFactory(),
+		shutdownSig:  make(chan os.Signal),
+		customValues: make(map[string]interface{}),
+	}
 )
 
 // Contains zap.logger and zap.config
