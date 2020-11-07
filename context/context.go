@@ -6,74 +6,143 @@ package rk_ctx
 
 import (
 	"fmt"
-	"github.com/rookie-ninja/rk-config"
+	rk_config "github.com/rookie-ninja/rk-config"
+	rk_logger "github.com/rookie-ninja/rk-logger"
 	"github.com/rookie-ninja/rk-query"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
+var (
+	// Global application context
+	GlobalAppCtx = NewAppContext()
+)
+
+// Contains zap.logger and zap.config
+// Make sure zap.logger was built from zap.config in order to
+// dynamically change zap.logger attributes
 type LoggerPair struct {
 	Logger *zap.Logger
 	Config *zap.Config
 }
 
-type AppContext struct {
+// Standard application context which contains bellow
+// 1: application - name of running application
+// 2: startTime - application start time
+// 3: loggers - loggers with name as a key
+// 4: viperConfigs - viper configs with name as a key
+// 5: rkConfigs - rk style configs with name as a key
+// 6: logger - default logger whose name is "default"
+// 7: eventFactory - event data factory
+// 8: shutdownSig - a channel receiving shutdown signals
+// 9: customValues - custom k/v store
+type appContext struct {
 	application  string
 	startTime    time.Time
 	loggers      map[string]*LoggerPair
-	eventFactory *rk_query.EventFactory
 	viperConfigs map[string]*viper.Viper
 	rkConfigs    map[string]*rk_config.RkConfig
+	logger       *zap.Logger
+	eventFactory *rk_query.EventFactory
 	shutdownSig  chan os.Signal
+	customValues map[string]interface{}
 }
 
-type AppContextOption func(*AppContext)
+type appContextOption func(*appContext)
 
-func WithApplication(app string) AppContextOption {
-	return func(ctx *AppContext) {
+func WithApplication(app string) appContextOption {
+	return func(ctx *appContext) {
 		ctx.application = app
 	}
 }
 
-func WithStartTime(ts time.Time) AppContextOption {
-	return func(ctx *AppContext) {
+func WithStartTime(ts time.Time) appContextOption {
+	return func(ctx *appContext) {
 		ctx.startTime = ts
 	}
 }
 
-func WithEventFactory(fac *rk_query.EventFactory) AppContextOption {
-	return func(ctx *AppContext) {
+func WithLoggers(pairs map[string]*LoggerPair) appContextOption {
+	return func(ctx *appContext) {
+		ctx.loggers = pairs
+	}
+}
+
+func WithViperConfigs(vipers map[string]*viper.Viper) appContextOption {
+	return func(ctx *appContext) {
+		ctx.viperConfigs = vipers
+	}
+}
+
+func WithRkConfigs(rks map[string]*rk_config.RkConfig) appContextOption {
+	return func(ctx *appContext) {
+		ctx.rkConfigs = rks
+	}
+}
+
+func WithEventFactory(fac *rk_query.EventFactory) appContextOption {
+	return func(ctx *appContext) {
 		ctx.eventFactory = fac
 	}
 }
 
-func WithShutdownSig(sig chan os.Signal) AppContextOption {
-	return func(ctx *AppContext) {
-		ctx.shutdownSig = sig
-	}
-}
-
-func NewAppContext(opts ...AppContextOption) *AppContext {
-	ctx := &AppContext{
+func NewAppContext(opts ...appContextOption) *appContext {
+	ctx := &appContext{
 		application:  "unknown-application",
 		startTime:    time.Unix(0, 0),
 		loggers:      make(map[string]*LoggerPair, 0),
-		eventFactory: rk_query.NewEventFactory(),
 		viperConfigs: make(map[string]*viper.Viper, 0),
 		rkConfigs:    make(map[string]*rk_config.RkConfig, 0),
+		eventFactory: rk_query.NewEventFactory(),
 		shutdownSig:  make(chan os.Signal),
+		customValues: make(map[string]interface{}),
 	}
 
 	for i := range opts {
 		opts[i](ctx)
 	}
 
+	// assign default logger
+	if pair, ok := ctx.loggers["default"]; ok {
+		ctx.logger = pair.Logger
+	} else {
+		ctx.loggers["default"] = &LoggerPair{
+			Logger: rk_logger.StdoutLogger,
+			Config: &rk_logger.StdoutLoggerConfig,
+		}
+		ctx.logger = rk_logger.StdoutLogger
+	}
+
+	// register signal
+	signal.Notify(ctx.shutdownSig,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGKILL,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+
+	GlobalAppCtx = ctx
+
 	return ctx
 }
 
-func (ctx *AppContext) AddLoggerPair(name string, pair *LoggerPair) string {
+func (ctx *appContext) GetValue(key string) interface{} {
+	return ctx.customValues[key]
+}
+
+func (ctx *appContext) ListValues() map[string]interface{} {
+	return ctx.customValues
+}
+
+func (ctx *appContext) AddValue(key string, value interface{}) {
+	ctx.customValues[key] = value
+}
+
+func (ctx *appContext) AddLoggerPair(name string, pair *LoggerPair) string {
 	if len(name) < 1 {
 		name = fmt.Sprintf("logger-%d", len(ctx.loggers)+1)
 	}
@@ -82,63 +151,15 @@ func (ctx *AppContext) AddLoggerPair(name string, pair *LoggerPair) string {
 	return name
 }
 
-func (ctx *AppContext) AddRkConfig(name string, config *rk_config.RkConfig) string {
-	if len(name) < 1 {
-		name = fmt.Sprintf("rkconfig-%d", len(ctx.rkConfigs)+1)
-	}
-
-	ctx.rkConfigs[name] = config
-	return name
+func (ctx *appContext) GetLoggerPair(name string) *LoggerPair {
+	return ctx.loggers[name]
 }
 
-func (ctx *AppContext) AddViperConfig(name string, config *viper.Viper) string {
-	if len(name) < 1 {
-		name = fmt.Sprintf("viper-%d", len(ctx.viperConfigs)+1)
-	}
-
-	ctx.viperConfigs[name] = config
-	return name
+func (ctx *appContext) ListLoggerPairs() map[string]*LoggerPair {
+	return ctx.loggers
 }
 
-func (ctx *AppContext) GetApplication() string {
-	return ctx.application
-}
-
-func (ctx *AppContext) GetStartTime() time.Time {
-	return ctx.startTime
-}
-
-func (ctx *AppContext) GetUpTime() time.Duration {
-	return time.Since(ctx.startTime)
-}
-
-func (ctx *AppContext) GetRkConfig(name string) *viper.Viper {
-	val, ok := ctx.viperConfigs[name]
-	if ok {
-		return val
-	}
-
-	return viper.New()
-}
-
-func (ctx *AppContext) ListRkConfigs() map[string]*rk_config.RkConfig {
-	return ctx.rkConfigs
-}
-
-func (ctx *AppContext) GetViperConfig(name string) *viper.Viper {
-	res, _ := ctx.viperConfigs[name]
-	return res
-}
-
-func (ctx *AppContext) ListViperConfigs() map[string]*viper.Viper {
-	return ctx.viperConfigs
-}
-
-func (ctx *AppContext) GetDefaultLogger() *zap.Logger {
-	return ctx.GetLogger("default")
-}
-
-func (ctx *AppContext) GetLogger(name string) *zap.Logger {
+func (ctx *appContext) GetLogger(name string) *zap.Logger {
 	if val, ok := ctx.loggers[name]; ok {
 		return val.Logger
 	}
@@ -146,18 +167,46 @@ func (ctx *AppContext) GetLogger(name string) *zap.Logger {
 	return zap.NewNop()
 }
 
-func (ctx *AppContext) GetLoggerConfig(name string) *zap.Config {
+func (ctx *appContext) GetDefaultLogger() *zap.Logger {
+	return ctx.GetLogger("default")
+}
+
+func (ctx *appContext) GetLoggerConfig(name string) *zap.Config {
 	if val, ok := ctx.loggers[name]; ok {
 		return val.Config
 	}
-
+	
 	return nil
 }
 
-func (ctx *AppContext) ListLoggers() map[string]*LoggerPair {
-	return ctx.loggers
+func (ctx *appContext) GetApplication() string {
+	return ctx.application
 }
 
-func (ctx *AppContext) GetShutdownSig() chan os.Signal {
+func (ctx *appContext) GetStartTime() time.Time {
+	return ctx.startTime
+}
+
+func (ctx *appContext) GetUpTime() time.Duration {
+	return time.Since(ctx.startTime)
+}
+
+func (ctx *appContext) GetViperConfig(name string) *viper.Viper {
+	return ctx.viperConfigs[name]
+}
+
+func (ctx *appContext) ListViperConfigs() map[string]*viper.Viper {
+	return ctx.viperConfigs
+}
+
+func (ctx *appContext) GetRkConfig(name string) *rk_config.RkConfig {
+	return ctx.rkConfigs[name]
+}
+
+func (ctx *appContext) ListRkConfigs() map[string]*rk_config.RkConfig {
+	return ctx.rkConfigs
+}
+
+func (ctx *appContext) GetShutdownSig() chan os.Signal {
 	return ctx.shutdownSig
 }
