@@ -5,6 +5,7 @@
 package rk_info
 
 import (
+	"github.com/hako/durafmt"
 	"github.com/rookie-ninja/rk-common/context"
 	"go.uber.org/zap"
 	"os"
@@ -18,7 +19,8 @@ type BasicInfo struct {
 	GID         string `json:"gid"`
 	Username    string `json:"username"`
 	StartTime   string `json:"start_time"`
-	UpTime      string `json:"up_time"`
+	UpTimeSec   int64  `json:"up_time_sec"`
+	UpTimeStr   string `json:"up_time_str"`
 	Application string `json:"application"`
 	Region      string `json:"region"`
 	AZ          string `json:"az"`
@@ -33,7 +35,8 @@ func BasicInfoToStruct() *BasicInfo {
 		UID:         u.Uid,
 		GID:         u.Gid,
 		StartTime:   rk_ctx.GlobalAppCtx.GetStartTime().Format(time.RFC3339),
-		UpTime:      rk_ctx.GlobalAppCtx.GetUpTime().String(),
+		UpTimeSec:   int64(rk_ctx.GlobalAppCtx.GetUpTime().Seconds()),
+		UpTimeStr:   durafmt.ParseShort(rk_ctx.GlobalAppCtx.GetUpTime()).String(),
 		Application: rk_ctx.GlobalAppCtx.GetApplication(),
 		Realm:       os.Getenv("REALM"),
 		Region:      os.Getenv("REGION"),

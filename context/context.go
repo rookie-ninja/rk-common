@@ -21,7 +21,7 @@ var (
 	// Global application context
 	GlobalAppCtx = &appContext{
 		application:  "unknown-application",
-		startTime:    time.Unix(0, 0),
+		startTime:    time.Now(),
 		loggers:      make(map[string]*LoggerPair, 0),
 		viperConfigs: make(map[string]*viper.Viper, 0),
 		rkConfigs:    make(map[string]*rk_config.RkConfig, 0),
@@ -30,6 +30,15 @@ var (
 		customValues: make(map[string]interface{}),
 	}
 )
+
+func init() {
+	signal.Notify(GlobalAppCtx.shutdownSig,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGKILL,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+}
 
 // Contains zap.logger and zap.config
 // Make sure zap.logger was built from zap.config in order to
@@ -102,7 +111,7 @@ func WithEventFactory(fac *rk_query.EventFactory) appContextOption {
 func NewAppContext(opts ...appContextOption) *appContext {
 	ctx := &appContext{
 		application:  "unknown-application",
-		startTime:    time.Unix(0, 0),
+		startTime:    time.Now(),
 		loggers:      make(map[string]*LoggerPair, 0),
 		viperConfigs: make(map[string]*viper.Viper, 0),
 		rkConfigs:    make(map[string]*rk_config.RkConfig, 0),
