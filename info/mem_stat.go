@@ -1,3 +1,7 @@
+// Copyright (c) 2020 rookie-ninja
+//
+// Use of this source code is governed by an MIT-style
+// license that can be found in the LICENSE file.
 package rk_info
 
 import (
@@ -11,6 +15,7 @@ import (
 type MemStats struct {
 	MemAllocMB      uint64 `json:"mem_alloc_byte"`
 	SysAllocMB      uint64 `json:"sys_alloc_byte"`
+	MemPercentage   float64`json:"mem_usage_percentage"`
 	LastGCTimestamp string `json:"last_gc_timestamp"`
 	GCCount         uint32 `json:"gc_count"`
 	ForceGCCount    uint32 `json:"force_gc_count"`
