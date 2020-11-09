@@ -12,8 +12,8 @@ import (
 
 // Config
 type ConfigInfo struct {
-	Name  string        `json:"name"`
-	Raw   string        `json:"raw"`
+	Name string `json:"name"`
+	Raw  string `json:"raw"`
 }
 
 // As struct
@@ -23,7 +23,7 @@ func ViperConfigToStruct() []*ConfigInfo {
 	for k, v := range rk_ctx.GlobalAppCtx.ListViperConfigs() {
 		res = append(res, &ConfigInfo{
 			Name: k,
-			Raw: fmt.Sprintf("%v", v.AllSettings()),
+			Raw:  fmt.Sprintf("%v", v.AllSettings()),
 		})
 	}
 
@@ -61,7 +61,7 @@ func RkConfigToStruct() []*ConfigInfo {
 	for k, v := range rk_ctx.GlobalAppCtx.ListRkConfigs() {
 		res = append(res, &ConfigInfo{
 			Name: k,
-			Raw: fmt.Sprintf("%v", v.GetViper().AllSettings()),
+			Raw:  fmt.Sprintf("%v", v.GetViper().AllSettings()),
 		})
 	}
 

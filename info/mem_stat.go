@@ -13,12 +13,12 @@ import (
 )
 
 type MemStats struct {
-	MemAllocMB      uint64 `json:"mem_alloc_byte"`
-	SysAllocMB      uint64 `json:"sys_alloc_byte"`
-	MemPercentage   float64`json:"mem_usage_percentage"`
-	LastGCTimestamp string `json:"last_gc_timestamp"`
-	GCCount         uint32 `json:"gc_count_total"`
-	ForceGCCount    uint32 `json:"force_gc_count"`
+	MemAllocMB      uint64  `json:"mem_alloc_byte"`
+	SysAllocMB      uint64  `json:"sys_alloc_byte"`
+	MemPercentage   float64 `json:"mem_usage_percentage"`
+	LastGCTimestamp string  `json:"last_gc_timestamp"`
+	GCCount         uint32  `json:"gc_count_total"`
+	ForceGCCount    uint32  `json:"force_gc_count"`
 }
 
 func MemStatsToStruct() *MemStats {
@@ -28,7 +28,7 @@ func MemStatsToStruct() *MemStats {
 	return &MemStats{
 		MemAllocMB:      stats.Alloc,
 		SysAllocMB:      stats.Sys,
-		MemPercentage:   float64(stats.Alloc)/float64(stats.Sys),
+		MemPercentage:   float64(stats.Alloc) / float64(stats.Sys),
 		LastGCTimestamp: time.Unix(0, int64(stats.LastGC)).Format(time.RFC3339),
 		GCCount:         stats.NumGC,
 		ForceGCCount:    stats.NumForcedGC,

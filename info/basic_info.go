@@ -66,6 +66,6 @@ func BasicInfoToMap() map[string]interface{} {
 }
 
 // As zap.Field
-func BasicInfoToFields() []zap.Field{
+func BasicInfoToFields() []zap.Field {
 	return structToFields(BasicInfoToStruct())
 }
