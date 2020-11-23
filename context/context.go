@@ -31,7 +31,25 @@ var (
 		customValues: make(map[string]interface{}),
 		entries:      make(map[string]rk_entry.Entry),
 	}
+
+	entryTypeList = make([]EntryInitializer, 0)
 )
+
+type EntryInitializer func(string, *rk_query.EventFactory, *zap.Logger) map[string]rk_entry.Entry
+
+func RegisterEntryInitializer(init EntryInitializer) {
+	entryTypeList = append(entryTypeList, init)
+}
+
+func ListEntryInitializer() []EntryInitializer {
+	// make a copy of it
+	res := make([]EntryInitializer, 0)
+	for i := range entryTypeList {
+		res = append(res, entryTypeList[i])
+	}
+
+	return res
+}
 
 // init global app context
 func init() {
