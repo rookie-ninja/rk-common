@@ -11,7 +11,7 @@ require (
 	github.com/prometheus/client_golang v1.8.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/rookie-ninja/rk-config v1.0.0
-	github.com/rookie-ninja/rk-logger v1.0.5
+	github.com/rookie-ninja/rk-logger v1.0.6
 	github.com/rookie-ninja/rk-query v1.0.7
 	github.com/spf13/afero v1.3.3 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect

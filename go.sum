@@ -308,8 +308,8 @@ github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFR
 github.com/rookie-ninja/rk-config v1.0.0 h1:zUhSOH4MCjSXoQ1mFpNBpDeY4Skovlkx5V+fonOLleQ=
 github.com/rookie-ninja/rk-config v1.0.0/go.mod h1:ybQeDwhbyRwmtin6dIADiSTMnimVUuktKfQWzwYhrsY=
 github.com/rookie-ninja/rk-logger v1.0.3/go.mod h1:ep3zy5MvOcVg+ftUsVnUcfFA9cxvVb99IBJEsmWAnlM=
-github.com/rookie-ninja/rk-logger v1.0.5 h1:MJieOSUxfGDm/uEh+mtaTivu/io2ohJQXzrzsfPpOzc=
-github.com/rookie-ninja/rk-logger v1.0.5/go.mod h1:ep3zy5MvOcVg+ftUsVnUcfFA9cxvVb99IBJEsmWAnlM=
+github.com/rookie-ninja/rk-logger v1.0.6 h1:X1fxx4xB3CuvP7YZeqRIhpcQg3aMy3ZcBpq1gxEFZB8=
+github.com/rookie-ninja/rk-logger v1.0.6/go.mod h1:ep3zy5MvOcVg+ftUsVnUcfFA9cxvVb99IBJEsmWAnlM=
 github.com/rookie-ninja/rk-query v1.0.7 h1:e8oKJMiWlBONiamEJENsSSP0pAc5WsKPPaHWR6+E7q4=
 github.com/rookie-ninja/rk-query v1.0.7/go.mod h1:Y9kTfDDMvQgcKrg/6gevAlDZ4fbB7XFHcMYzMq+i/8U=
 github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
