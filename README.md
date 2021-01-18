@@ -80,6 +80,12 @@ func (entry *EntryImpl) Bootstrap(event rk_query.Event) {
     event.AddPair("bootstrap", "true")
 }
 
+// Important:
+// WaitForShutdownSig won't be called from boot.Shutdown
+// User could call this function while start entry only without bootstrapper
+// We recommend to call Shutdown in this function
+func (entry *EntryImpl) WaitForShutdownSig(duration time.Duration) {}
+
 // Shutdown will be called from boot.Shutdown()
 func (entry *EntryImpl) Shutdown(event rk_query.Event) {
     // do your stuff

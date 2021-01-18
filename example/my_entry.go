@@ -8,6 +8,7 @@ import (
 	"github.com/rookie-ninja/rk-common/entry"
 	"github.com/rookie-ninja/rk-query"
 	"go.uber.org/zap"
+	"time"
 )
 
 // Register entry, must be in init() function since we need to register entry
@@ -63,6 +64,12 @@ func (entry *EntryImpl) Bootstrap(event rk_query.Event) {
 	// do your stuff
 	event.AddPair("bootstrap", "true")
 }
+
+// Important:
+// WaitForShutdownSig won't be called from boot.Shutdown
+// User could call this function while start entry only without bootstrapper
+// We recommend to call Shutdown in this function
+func (entry *EntryImpl) WaitForShutdownSig(duration time.Duration) {}
 
 // Shutdown will be called from boot.Shutdown()
 func (entry *EntryImpl) Shutdown(event rk_query.Event) {

@@ -7,6 +7,7 @@ package rk_entry
 import (
 	"github.com/rookie-ninja/rk-query"
 	"go.uber.org/zap"
+	"time"
 )
 
 // An entry could be any kinds of services or pieces of codes which
@@ -45,6 +46,9 @@ type EntryRegFunc func(string, *rk_query.EventFactory, *zap.Logger) map[string]E
 type Entry interface {
 	// bootstrap entry
 	Bootstrap(rk_query.Event)
+
+	// wait for shutdown signal and wait for draining incomplete procedure
+	WaitForShutdownSig(duration time.Duration)
 
 	// shutdown entry
 	Shutdown(rk_query.Event)

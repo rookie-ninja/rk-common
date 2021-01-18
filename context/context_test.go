@@ -500,6 +500,12 @@ type EntryMock struct{}
 // Bootstrap will be called from boot.Bootstrap()
 func (entry *EntryMock) Bootstrap(rk_query.Event) {}
 
+// Important:
+// WaitForShutdownSig won't be called from boot.Shutdown
+// User could call this function while start entry only without bootstrapper
+// We recommend to call Shutdown in this function
+func (entry *EntryMock) WaitForShutdownSig(time.Duration) {}
+
 // Shutdown will be called from boot.Shutdown()
 func (entry *EntryMock) Shutdown(rk_query.Event) {}
 
