@@ -5,16 +5,25 @@ import (
 	dto "github.com/prometheus/client_model/go"
 )
 
+// Request metrics to struct from prometheus collector
+// 1: Path - API path
+// 2: ElapsedNanoP50 - quantile of p50 with time elapsed
+// 3: ElapsedNanoP90 - quantile of p90 with time elapsed
+// 4: ElapsedNanoP99 - quantile of p99 with time elapsed
+// 5: ElapsedNanoP999 - quantile of p999 with time elapsed
+// 6: Count - total number of requests
+// 7: ResCode - response code labels
 type ReqMetricsRK struct {
-	Path            string  `json:"path"`
-	ElapsedNanoP50  float64 `json:"elapsed_nano_p50"`
-	ElapsedNanoP90  float64 `json:"elapsed_nano_p90"`
-	ElapsedNanoP99  float64 `json:"elapsed_nano_p99"`
-	ElapsedNanoP999 float64 `json:"elapsed_nano_p999"`
-	Count           uint64  `json:"count"`
+	Path            string       `json:"path"`
+	ElapsedNanoP50  float64      `json:"elapsed_nano_p50"`
+	ElapsedNanoP90  float64      `json:"elapsed_nano_p90"`
+	ElapsedNanoP99  float64      `json:"elapsed_nano_p99"`
+	ElapsedNanoP999 float64      `json:"elapsed_nano_p999"`
+	Count           uint64       `json:"count"`
 	ResCode         []*ResCodeRK `json:"res_code"`
 }
 
+// Labels and request count
 type ResCodeRK struct {
 	ResCode string `json:"res_code"`
 	Count   uint64 `json:"count"`
@@ -44,7 +53,9 @@ func GetRequestMetrics(sumCollector *prometheus.SummaryVec) []*ReqMetricsRK {
 	for element := range channel {
 		// write to family
 		metricsPB := &dto.Metric{}
-		element.Write(metricsPB)
+		if err := element.Write(metricsPB); err != nil {
+			continue
+		}
 
 		// iterate labels
 		path, code := getPathAndResCode(metricsPB)
@@ -93,7 +104,7 @@ func GetRequestMetrics(sumCollector *prometheus.SummaryVec) []*ReqMetricsRK {
 						// add it if different
 						val.ResCode = append(val.ResCode, &ResCodeRK{
 							ResCode: code,
-							Count: metricsPB.GetSummary().GetSampleCount(),
+							Count:   metricsPB.GetSummary().GetSampleCount(),
 						})
 					} else {
 						val.ResCode[i].Count += metricsPB.GetSummary().GetSampleCount()
@@ -101,7 +112,7 @@ func GetRequestMetrics(sumCollector *prometheus.SummaryVec) []*ReqMetricsRK {
 				}
 			} else {
 				rk := &ReqMetricsRK{
-					Path: path,
+					Path:    path,
 					ResCode: make([]*ResCodeRK, 0),
 				}
 				// 1: record count of request
@@ -126,7 +137,7 @@ func GetRequestMetrics(sumCollector *prometheus.SummaryVec) []*ReqMetricsRK {
 				// 3: add res code
 				rk.ResCode = append(rk.ResCode, &ResCodeRK{
 					ResCode: code,
-					Count: metricsPB.GetSummary().GetSampleCount(),
+					Count:   metricsPB.GetSummary().GetSampleCount(),
 				})
 
 				reqMetricsMap[path] = rk
@@ -162,8 +173,7 @@ func getPathAndResCode(metricsPB *dto.Metric) (string, string) {
 // formula:
 // newQuantile = oldQuantile*oldFraction + newQuantile*newFraction
 func calcNewQuantile(oldCount, newCount uint64, oldQuantile, newQuantile float64) float64 {
-	oldFraction := float64(oldCount) / float64(oldCount + newCount)
-	newFraction := float64(newCount) / float64(oldCount + newCount)
+	oldFraction := float64(oldCount) / float64(oldCount+newCount)
+	newFraction := float64(newCount) / float64(oldCount+newCount)
 	return oldQuantile*oldFraction + newQuantile*newFraction
 }
-

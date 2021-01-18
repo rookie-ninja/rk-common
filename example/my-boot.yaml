@@ -1,0 +1,4 @@
+---
+example:
+  enabled: true
+  key: value

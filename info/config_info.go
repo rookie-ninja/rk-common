@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Config
+// Config information
 type ConfigInfo struct {
 	Name string `json:"name"`
 	Raw  string `json:"raw"`
@@ -47,48 +47,22 @@ func ViperConfigToBytes() []byte {
 
 // As map
 func ViperConfigToMap() map[string]interface{} {
-	return structToMap(ViperConfigToStruct())
+	res := make(map[string]interface{})
+	configList := ViperConfigToStruct()
+	for i := range configList {
+		res[configList[i].Name] = configList[i].Raw
+	}
+	return res
 }
 
 // As zap.Field
 func ViperConfigToFields() []zap.Field {
-	return structToFields(ViperConfigToStruct())
-}
+	res := make([]zap.Field, 0)
 
-func RkConfigToStruct() []*ConfigInfo {
-	res := make([]*ConfigInfo, 0)
-
-	for k, v := range rk_ctx.GlobalAppCtx.ListRkConfigs() {
-		res = append(res, &ConfigInfo{
-			Name: k,
-			Raw:  fmt.Sprintf("%v", v.GetViper().AllSettings()),
-		})
+	configList := ViperConfigToStruct()
+	for i := range configList {
+		res = append(res, zap.Any(configList[i].Name, configList[i].Raw))
 	}
 
 	return res
-}
-
-// As json string
-func RkConfigToJSON() string {
-	return structToJSON(RkConfigToStruct())
-}
-
-// As pretty json string
-func RkConfigToJSONPretty() string {
-	return structToJSONPretty(RkConfigToStruct())
-}
-
-// As byte array
-func RkConfigToBytes() []byte {
-	return structToBytes(RkConfigToStruct())
-}
-
-// As map
-func RkConfigToMap() map[string]interface{} {
-	return structToMap(RkConfigToStruct())
-}
-
-// As zap.Field
-func RkConfigToFields() []zap.Field {
-	return structToFields(RkConfigToStruct())
 }

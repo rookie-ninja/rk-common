@@ -6,9 +6,8 @@ package rk_ctx
 
 import (
 	"fmt"
-	rk_entry "github.com/rookie-ninja/rk-common/entry"
-	rk_config "github.com/rookie-ninja/rk-config"
-	rk_logger "github.com/rookie-ninja/rk-logger"
+	"github.com/rookie-ninja/rk-common/entry"
+	"github.com/rookie-ninja/rk-logger"
 	"github.com/rookie-ninja/rk-query"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -20,49 +19,25 @@ import (
 
 var (
 	// Global application context
-	GlobalAppCtx = &appContext{
-		application:  "rk-application",
-		startTime:    time.Now(),
-		loggers:      make(map[string]*LoggerPair, 0),
-		viperConfigs: make(map[string]*viper.Viper, 0),
-		rkConfigs:    make(map[string]*rk_config.RkConfig, 0),
-		eventFactory: rk_query.NewEventFactory(),
-		shutdownSig:  make(chan os.Signal),
-		customValues: make(map[string]interface{}),
-		entries:      make(map[string]rk_entry.Entry),
-	}
-
-	entryTypeList = make([]EntryInitializer, 0)
+	GlobalAppCtx = &appContext{}
+	// list of entry registration function
+	entryRegFuncList = make([]rk_entry.EntryRegFunc, 0)
 )
 
-type EntryInitializer func(string, *rk_query.EventFactory, *zap.Logger) map[string]rk_entry.Entry
-
-func RegisterEntryInitializer(init EntryInitializer) {
-	entryTypeList = append(entryTypeList, init)
-}
-
-func ListEntryInitializer() []EntryInitializer {
-	// make a copy of it
-	res := make([]EntryInitializer, 0)
-	for i := range entryTypeList {
-		res = append(res, entryTypeList[i])
-	}
-
-	return res
-}
+type ShutdownHook func()
 
 // init global app context
 func init() {
 	GlobalAppCtx = &appContext{
-		application:  "rk-application",
-		startTime:    time.Now(),
-		loggers:      make(map[string]*LoggerPair, 0),
-		viperConfigs: make(map[string]*viper.Viper, 0),
-		rkConfigs:    make(map[string]*rk_config.RkConfig, 0),
-		eventFactory: rk_query.NewEventFactory(),
-		shutdownSig:  make(chan os.Signal),
-		customValues: make(map[string]interface{}),
-		entries:      make(map[string]rk_entry.Entry),
+		applicationName: "rk-app",
+		startTime:       time.Now(),
+		loggers:         make(map[string]*LoggerPair),
+		viperConfigs:    make(map[string]*viper.Viper),
+		eventFactory:    rk_query.NewEventFactory(),
+		shutdownSig:     make(chan os.Signal),
+		shutdownHooks:   make(map[string]ShutdownHook),
+		customValues:    make(map[string]interface{}),
+		entries:         make(map[string]rk_entry.Entry),
 	}
 
 	// init logger
@@ -75,7 +50,6 @@ func init() {
 	signal.Notify(GlobalAppCtx.shutdownSig,
 		syscall.SIGHUP,
 		syscall.SIGINT,
-		syscall.SIGKILL,
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 }
@@ -89,30 +63,42 @@ type LoggerPair struct {
 }
 
 // Standard application context which contains bellow
-// 1: application - name of running application
+// 1: applicationName - name of running application
 // 2: startTime - application start time
 // 3: loggers - loggers with name as a key
 // 4: viperConfigs - viper configs with name as a key
-// 5: rkConfigs - rk style configs with name as a key
-// 6: logger - default logger whose name is "rk"
-// 7: eventFactory - event data factory
-// 8: shutdownSig - a channel receiving shutdown signals
-// 9: customValues - custom k/v store
+// 5: eventFactory - event data factory
+// 6: shutdownSig - a channel receiving shutdown signals
+// 7: shutdownHooks - a list of shutdownHook function registered by user
+// 8: customValues - custom k/v store
 type appContext struct {
-	application  string
-	startTime    time.Time
-	loggers      map[string]*LoggerPair
-	viperConfigs map[string]*viper.Viper
-	rkConfigs    map[string]*rk_config.RkConfig
-	logger       *zap.Logger
-	eventFactory *rk_query.EventFactory
-	shutdownSig  chan os.Signal
-	customValues map[string]interface{}
-	entries      map[string]rk_entry.Entry
-	quitters     map[string]QuitterFunc
+	applicationName string
+	startTime       time.Time
+	loggers         map[string]*LoggerPair
+	viperConfigs    map[string]*viper.Viper
+	eventFactory    *rk_query.EventFactory
+	customValues    map[string]interface{}
+	entries         map[string]rk_entry.Entry
+	shutdownSig     chan os.Signal
+	shutdownHooks   map[string]ShutdownHook
 }
 
-type QuitterFunc func()
+func RegisterEntry(regFunc rk_entry.EntryRegFunc) {
+	if regFunc == nil {
+		return
+	}
+	entryRegFuncList = append(entryRegFuncList, regFunc)
+}
+
+func ListEntryRegFunc() []rk_entry.EntryRegFunc {
+	// make a copy of it
+	res := make([]rk_entry.EntryRegFunc, 0)
+	for i := range entryRegFuncList {
+		res = append(res, entryRegFuncList[i])
+	}
+
+	return res
+}
 
 // value related
 func (ctx *appContext) AddValue(key string, value interface{}) {
@@ -127,8 +113,22 @@ func (ctx *appContext) ListValues() map[string]interface{} {
 	return ctx.customValues
 }
 
+func (ctx *appContext) DeleteValue(key string) {
+	delete(ctx.customValues, key)
+}
+
+func (ctx *appContext) ClearValues() {
+	for k := range ctx.customValues {
+		delete(ctx.customValues, k)
+	}
+}
+
 // logger related
 func (ctx *appContext) AddLoggerPair(name string, pair *LoggerPair) string {
+	if pair == nil {
+		return ""
+	}
+
 	if len(name) < 1 {
 		name = fmt.Sprintf("logger-%d", len(ctx.loggers)+1)
 	}
@@ -165,13 +165,19 @@ func (ctx *appContext) GetLoggerConfig(name string) *zap.Config {
 	return nil
 }
 
-// application related
-func (ctx *appContext) SetApplication(application string) {
-	ctx.application = application
+func (ctx *appContext) clearLoggerPairs() {
+	for k := range ctx.loggers {
+		delete(ctx.loggers, k)
+	}
 }
 
-func (ctx *appContext) GetApplication() string {
-	return ctx.application
+// application related
+func (ctx *appContext) SetApplicationName(name string) {
+	ctx.applicationName = name
+}
+
+func (ctx *appContext) GetApplicationName() string {
+	return ctx.applicationName
 }
 
 // start time related
@@ -189,6 +195,9 @@ func (ctx *appContext) GetUpTime() time.Duration {
 
 // viper config related
 func (ctx *appContext) AddViperConfig(name string, vp *viper.Viper) {
+	if vp == nil || len(name) < 1 {
+		return
+	}
 	ctx.viperConfigs[name] = vp
 }
 
@@ -200,17 +209,10 @@ func (ctx *appContext) ListViperConfigs() map[string]*viper.Viper {
 	return ctx.viperConfigs
 }
 
-// rk config related
-func (ctx *appContext) AddRkConfig(name string, rk *rk_config.RkConfig) {
-	ctx.rkConfigs[name] = rk
-}
-
-func (ctx *appContext) GetRkConfig(name string) *rk_config.RkConfig {
-	return ctx.rkConfigs[name]
-}
-
-func (ctx *appContext) ListRkConfigs() map[string]*rk_config.RkConfig {
-	return ctx.rkConfigs
+func (ctx *appContext) clearViperConfigs() {
+	for k := range ctx.viperConfigs {
+		delete(ctx.viperConfigs, k)
+	}
 }
 
 // event factory related
@@ -227,21 +229,33 @@ func (ctx *appContext) GetShutdownSig() chan os.Signal {
 	return ctx.shutdownSig
 }
 
-// quitter related
-func (ctx *appContext) AddQuitter(name string, f QuitterFunc) {
-	ctx.quitters[name] = f
+// shutdown hook related
+func (ctx *appContext) AddShutdownHook(name string, f ShutdownHook) {
+	if f == nil {
+		return
+	}
+	ctx.shutdownHooks[name] = f
 }
 
-func (ctx *appContext) GetQuitter(name string) QuitterFunc {
-	return ctx.quitters[name]
+func (ctx *appContext) GetShutdownHook(name string) ShutdownHook {
+	return ctx.shutdownHooks[name]
 }
 
-func (ctx *appContext) ListQuitters() map[string]QuitterFunc {
-	return ctx.quitters
+func (ctx *appContext) ListShutdownHooks() map[string]ShutdownHook {
+	return ctx.shutdownHooks
+}
+
+func (ctx *appContext) clearShutdownHooks() {
+	for k := range ctx.shutdownHooks {
+		delete(ctx.shutdownHooks, k)
+	}
 }
 
 // entry related
 func (ctx *appContext) AddEntry(name string, entry rk_entry.Entry) {
+	if entry == nil {
+		return
+	}
 	ctx.entries[name] = entry
 }
 
@@ -257,4 +271,10 @@ func (ctx *appContext) MergeEntries(entries map[string]rk_entry.Entry) {
 
 func (ctx *appContext) ListEntries() map[string]rk_entry.Entry {
 	return ctx.entries
+}
+
+func (ctx *appContext) clearEntries() {
+	for k := range ctx.entries {
+		delete(ctx.entries, k)
+	}
 }

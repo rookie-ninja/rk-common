@@ -5,13 +5,12 @@
 package rk_info
 
 import (
-	"bytes"
-	"encoding/json"
 	"go.uber.org/zap"
 	"runtime"
 	"time"
 )
 
+// Memory stats of current running process
 type MemStats struct {
 	MemAllocByte    uint64  `json:"mem_alloc_byte"`
 	SysAllocByte    uint64  `json:"sys_alloc_byte"`
@@ -53,41 +52,4 @@ func MemStatsToMap() map[string]interface{} {
 
 func MemStatsToFields() []zap.Field {
 	return structToFields(MemStatsToStruct())
-}
-
-func structToJSON(src interface{}) string {
-	return string(structToBytes(src))
-}
-
-func structToJSONPretty(src interface{}) string {
-	mid := structToBytes(src)
-	dest := &bytes.Buffer{}
-	json.Indent(dest, mid, "", "  ")
-
-	return dest.String()
-}
-
-func structToBytes(src interface{}) []byte {
-	bytes, _ := json.Marshal(src)
-	return bytes
-}
-
-func structToMap(src interface{}) map[string]interface{} {
-	bytes := structToBytes(src)
-	res := make(map[string]interface{})
-
-	json.Unmarshal(bytes, res)
-
-	return res
-}
-
-func structToFields(src interface{}) []zap.Field {
-	mid := structToMap(src)
-	fields := make([]zap.Field, 0)
-
-	for k, v := range mid {
-		fields = append(fields, zap.Any(k, v))
-	}
-
-	return fields
 }
