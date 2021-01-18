@@ -27,6 +27,7 @@ The common library mainly used by rk-boot
 A struct called AppContext witch contains RK style application metadata.
 
 **How to use AppContext?** 
+
 Access it via GlobalAppCtx variable 
 ```go
     rk_ctx.GlobalAppCtx
@@ -48,7 +49,10 @@ rk_entry.Entry is an interface for rk_boot.Bootstrapper to bootstrap entry.
 
 Users could implement rk_entry.Entry interface and bootstrap any service/process with rk_boot.Bootstrapper
 
-**How to create a new custom entry? Please see example/ for details**
+**How to create a new custom entry?**
+
+Please see example/ for details
+
 - **Step 1:**
 Construct your own entry YAML struct as needed
 example:
@@ -64,45 +68,45 @@ Create a struct which implements Entry interface.
 ```go
 // A struct which is for unmarshalled YAML
 type EntryImpl struct {
-	name    string
-	key     string
-	logger  *zap.Logger
-	factory *rk_query.EventFactory
+    name    string
+    key     string
+    logger  *zap.Logger
+    factory *rk_query.EventFactory
 }
 
 // Bootstrap will be called from boot.Bootstrap()
 func (entry *EntryImpl) Bootstrap(event rk_query.Event) {
-	// do your stuff
-	event.AddPair("bootstrap", "true")
+    // do your stuff 
+    event.AddPair("bootstrap", "true")
 }
 
 // Shutdown will be called from boot.Shutdown()
 func (entry *EntryImpl) Shutdown(event rk_query.Event) {
-	// do your stuff
-	event.AddPair("shutdown", "true")
+    // do your stuff
+    event.AddPair("shutdown", "true")
 }
 
 // Return name of entry
 func (entry *EntryImpl) GetName() string {
-	return entry.name
+    return entry.name
 }
 
 // Return type of entry
 func (entry *EntryImpl) GetType() string {
-	return "example-entry"
+    return "example-entry"
 }
 
 // Modify as needed
 func (entry *EntryImpl) String() string {
-	m := map[string]string{
-		"name": entry.GetName(),
-		"type": entry.GetType(),
-		"key":  entry.key,
-	}
+    m := map[string]string{
+        "name": entry.GetName(),
+        "type": entry.GetType(),
+        "key":  entry.key,
+    }
 
-	bytes, _ := json.Marshal(m)
+    bytes, _ := json.Marshal(m)
 
-	return string(bytes)
+    return string(bytes)
 }
 ```
 
@@ -110,37 +114,37 @@ func (entry *EntryImpl) String() string {
 Implements EntryRegFunc and define a struct which could be marshaled from YAML config
 ```go
 type bootConfig struct {
-	Example struct {
-		Enabled bool   `yaml:"enabled"`
-		Key     string `yaml:"key"`
-	} `yaml:"example"`
+    Example struct {
+        Enabled bool   `yaml:"enabled"`
+        Key     string `yaml:"key"`
+    } `yaml:"example"`
 }
 
 // An implementation of:
 // type EntryRegFunc func(string, *rk_query.EventFactory, *zap.Logger) map[string]Entry
 func NewEntry(configFilePath string, factory *rk_query.EventFactory, logger *zap.Logger) map[string]rk_entry.Entry {
-	// 1: read config file
-	bytes := rk_common.MustReadFile(configFilePath)
-	config := &bootConfig{}
-	// 2: unmarshal config to struct
-	if err := yaml.Unmarshal(bytes, config); err != nil {
-		rk_common.ShutdownWithError(err)
-	}
+    // 1: read config file
+    bytes := rk_common.MustReadFile(configFilePath)
+    config := &bootConfig{}
+    // 2: unmarshal config to struct
+    if err := yaml.Unmarshal(bytes, config); err != nil {
+        rk_common.ShutdownWithError(err)
+    }
 
-	res := make(map[string]rk_entry.Entry)
+    res := make(map[string]rk_entry.Entry)
 
 	// 3: construct entry
-	if config.Example.Enabled {
-		entry := &EntryImpl{
-			name:    "example",
-			key:     config.Example.Key,
-			logger:  logger,
-			factory: factory,
-		}
-		res[entry.GetName()] = entry
-	}
+    if config.Example.Enabled {
+        entry := &EntryImpl{
+            name:    "example",
+            key:     config.Example.Key,
+            logger:  logger,
+            factory: factory,
+        }
+        res[entry.GetName()] = entry
+    }
 
-	return res
+    return res
 }
 ```
 - **Step 4:**
@@ -149,12 +153,12 @@ Register your reg function in init() in order to register your entry while appli
 // Register entry, must be in init() function since we need to register entry
 // at beginning
 func init() {
-	rk_ctx.RegisterEntry(NewEntry)
+    rk_ctx.RegisterEntry(NewEntry)
 }
 ```
 
-How entry interact with rk-boot.Bootstrapper?**
-**
+**How entry interact with rk-boot.Bootstrapper?**
+
 1: Entry will be created and registered into rk_ctx.GlobalAppCtx
 
 2: Bootstrap will be called from Bootstrapper.Bootstrap() function
