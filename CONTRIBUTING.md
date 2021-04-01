@@ -24,7 +24,7 @@ respect! We take our [code of conduct](CODE_OF_CONDUCT.md) seriously.
 
 ```
 git clone git@github.com:your_github_username/rookie-ninja/rk-common.git
-cd rk-boot
+cd rk-common
 git remote add upstream https://github.com/rookie-ninja/rk-common.git
 git fetch upstream
 ```
