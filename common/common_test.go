@@ -127,7 +127,7 @@ func TestMustReadFile_HappyCase(t *testing.T) {
 }
 
 func TestGetEnvValueOrDefault_ExpectEnvValue(t *testing.T) {
-	os.Setenv("unit-test-key", "unit-test-value")
+	assert.Nil(t, os.Setenv("unit-test-key", "unit-test-value"))
 	assert.Equal(t, "unit-test-value", GetEnvValueOrDefault("unit-test-key", "unit-test-default"))
 	os.Clearenv()
 }
@@ -698,4 +698,112 @@ func TestConvertStructToZapFields_HappyCase(t *testing.T) {
 	})
 
 	assert.Len(t, res, 3)
+}
+
+func TestMatchLocaleWithEnv_WithEmptyLocale(t *testing.T) {
+	assert.False(t, MatchLocaleWithEnv(""))
+}
+
+func TestMatchLocaleWithEnv_WithInvalidLocale(t *testing.T) {
+	assert.False(t, MatchLocaleWithEnv("realm::region::az"))
+}
+
+func TestMatchLocaleWithEnv_WithEmptyRealmEnv(t *testing.T) {
+	// with realm exist in locale
+	assert.True(t, MatchLocaleWithEnv("fake-realm::*::*::*"))
+
+	// with wildcard in realm
+	assert.True(t, MatchLocaleWithEnv("*::*::*::*"))
+}
+
+func TestMatchLocaleWithEnv_WithRealmEnv(t *testing.T) {
+	// set environment variable
+	assert.Nil(t, os.Setenv("REALM", "ut"))
+
+	// with realm exist in locale
+	assert.True(t, MatchLocaleWithEnv("ut::*::*::*"))
+
+	// with wildcard in realm
+	assert.True(t, MatchLocaleWithEnv("*::*::*::*"))
+
+	// with wrong realm
+	assert.False(t, MatchLocaleWithEnv("rk::*::*::*"))
+
+	assert.Nil(t, os.Setenv("REALM", ""))
+}
+
+func TestMatchLocaleWithEnv_WithRegionEnv(t *testing.T) {
+	// set environment variable
+	assert.Nil(t, os.Setenv("REGION", "ut"))
+
+	// with region exist in locale
+	assert.True(t, MatchLocaleWithEnv("*::ut::*::*"))
+
+	// with wildcard in region
+	assert.True(t, MatchLocaleWithEnv("*::*::*::*"))
+
+	// with wrong region
+	assert.False(t, MatchLocaleWithEnv("*::rk::*::*"))
+
+	assert.Nil(t, os.Setenv("REGION", ""))
+}
+
+func TestMatchLocaleWithEnv_WithAZEnv(t *testing.T) {
+	// set environment variable
+	assert.Nil(t, os.Setenv("AZ", "ut"))
+
+	// with az exist in locale
+	assert.True(t, MatchLocaleWithEnv("*::*::ut::*"))
+
+	// with wildcard in az
+	assert.True(t, MatchLocaleWithEnv("*::*::*::*"))
+
+	// with wrong az
+	assert.False(t, MatchLocaleWithEnv("*::*::rk::*"))
+
+	assert.Nil(t, os.Setenv("AZ", ""))
+}
+
+func TestMatchLocaleWithEnv_WithDomainEnv(t *testing.T) {
+	// set environment variable
+	assert.Nil(t, os.Setenv("DOMAIN", "ut"))
+
+	// with domain exist in locale
+	assert.True(t, MatchLocaleWithEnv("*::*::*::ut"))
+
+	// with wildcard in domain
+	assert.True(t, MatchLocaleWithEnv("*::*::*::*"))
+
+	// with wrong domain
+	assert.False(t, MatchLocaleWithEnv("*::*::*::rk"))
+
+	assert.Nil(t, os.Setenv("DOMAIN", ""))
+}
+
+func TestGetUsernameFromBasicAuthString_WithInvalidBasicAuth(t *testing.T) {
+	assert.Empty(t, GetUsernameFromBasicAuthString("invalid-basic-auth"))
+}
+
+func TestGetUsernameFromBasicAuthString_HappyCase(t *testing.T) {
+	assert.Equal(t, "user", GetUsernameFromBasicAuthString("user:pass"))
+}
+
+func TestGetPasswordFromBasicAuthString_WithInvalidBasicAuth(t *testing.T) {
+	assert.Empty(t, GetPasswordFromBasicAuthString("invalid-basic-auth"))
+}
+
+func TestGetPasswordFromBasicAuthString_HappyCase(t *testing.T) {
+	assert.Equal(t, "pass", GetPasswordFromBasicAuthString("user:pass"))
+}
+
+func TestExtractSchemeFromURL_InvalidURL(t *testing.T) {
+	assert.Empty(t, ExtractSchemeFromURL("ftp://localhost"))
+}
+
+func TestExtractSchemeFromURL_WithHTTP(t *testing.T) {
+	assert.Equal(t, "http", ExtractSchemeFromURL("http://localhost"))
+}
+
+func TestExtractSchemeFromURL_WithHTTPS(t *testing.T) {
+	assert.Equal(t, "https", ExtractSchemeFromURL("https://localhost"))
 }

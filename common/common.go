@@ -428,3 +428,121 @@ func ConvertStructToZapFields(src interface{}) []zap.Field {
 
 	return fields
 }
+
+// Mainly used in entry config.
+// RK use <realm>::<region>::<az>::<domain> to distinguish different environment.
+// Variable of <locale> could be composed as form of <realm>::<region>::<az>::<domain>
+// - realm: It could be a company, department and so on, like RK-Corp.
+//          Environment variable: REALM
+//          Eg: RK-Corp
+//          Wildcard: supported
+//
+// - region: Please see AWS web site: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
+//           Environment variable: REGION
+//           Eg: us-east
+//           Wildcard: supported
+//
+// - az: Availability zone, please see AWS web site for details: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
+//       Environment variable: AZ
+//       Eg: us-east-1
+//       Wildcard: supported
+//
+// - domain: Stands for different environment, like dev, test, prod and so on, users can define it by themselves.
+//           Environment variable: DOMAIN
+//           Eg: prod
+//           Wildcard: supported
+//
+// How it works?
+// First, we will split locale with "::" and extract realm, region, az and domain.
+// Second, get environment variable named as REALM, REGION, AZ and DOMAIN.
+// Finally, compare every element in locale variable and environment variable.
+// If variables in locale represented as wildcard(*), we will ignore comparison step.
+//
+// Example:
+// # let's assuming we are going to define DB address which is different based on environment.
+// # Then, user can distinguish DB address based on locale.
+// # We recommend to include locale with wildcard.
+// ---
+// DB:
+//   - name: redis-default
+//     locale: "*::*::*::*"
+//     addr: "192.0.0.1:6379"
+//   - name: redis-in-test
+//     locale: "*::*::*::test"
+//     addr: "192.0.0.1:6379"
+//   - name: redis-in-prod
+//     locale: "*::*::*::prod"
+//     addr: "176.0.0.1:6379"
+func MatchLocaleWithEnv(locale string) bool {
+	if len(locale) < 1 {
+		return false
+	}
+
+	tokens := strings.Split(locale, "::")
+	if len(tokens) != 4 {
+		return false
+	}
+
+	// validate realm
+	realmFromEnv := os.Getenv("REALM")
+	realmFromUser := tokens[0]
+
+	if len(realmFromEnv) > 0 && realmFromEnv != realmFromUser && realmFromUser != "*" {
+		return false
+	}
+
+	regionFromEnv := os.Getenv("REGION")
+	regionFromUser := tokens[1]
+
+	if len(regionFromEnv) > 0 && regionFromEnv != regionFromUser && regionFromUser != "*" {
+		return false
+	}
+
+	azFromEnv := os.Getenv("AZ")
+	azFromUser := tokens[2]
+
+	if len(azFromEnv) > 0 && azFromEnv != azFromUser && azFromUser != "*" {
+		return false
+	}
+
+	domainFromEnv := os.Getenv("DOMAIN")
+	domainFromUser := tokens[3]
+
+	if len(domainFromEnv) > 0 && domainFromEnv != domainFromUser && domainFromUser != "*" {
+		return false
+	}
+
+	return true
+}
+
+// Extract username from basic auth formed as <username>:<password>
+func GetUsernameFromBasicAuthString(basicAuth string) string {
+	tokens := strings.Split(basicAuth, ":")
+	if len(tokens) != 2 {
+		return ""
+	}
+
+	return tokens[0]
+}
+
+// Extract password from basic auth formed as <username>:<password>
+func GetPasswordFromBasicAuthString(basicAuth string) string {
+	tokens := strings.Split(basicAuth, ":")
+	if len(tokens) != 2 {
+		return ""
+	}
+
+	return tokens[1]
+}
+
+// Extract scheme from endpoint
+func ExtractSchemeFromURL(url string) string {
+	res := ""
+	if strings.HasPrefix(url, "http://") {
+		res = "http"
+	} else if strings.HasPrefix(url, "https://") {
+		res = "https"
+	}
+
+	return res
+}
