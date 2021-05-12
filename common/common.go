@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -191,10 +192,12 @@ func MustReadFile(filePath string) []byte {
 
 // Check File existence, file path should be full path.
 func FileExists(filePath string) bool {
-	if _, err := os.Stat(filePath); err != nil {
+	if file, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
 			return false
 		}
+	} else if file.IsDir() {
+		return false
 	}
 	return true
 }
@@ -542,6 +545,36 @@ func ExtractSchemeFromURL(url string) string {
 		res = "http"
 	} else if strings.HasPrefix(url, "https://") {
 		res = "https"
+	}
+
+	return res
+}
+
+// Convert map key to printable one.
+func GeneralizeMapKeyToString(input interface{}) interface{} {
+	var res interface{}
+
+	switch element := input.(type) {
+	case map[interface{}]interface{}:
+		m := make(map[string]interface{})
+		for k, v := range element {
+			m[fmt.Sprint(k)] = GeneralizeMapKeyToString(v)
+		}
+		res = m
+	case []interface{}:
+		slice := make([]interface{}, len(element))
+		for i, v := range element {
+			slice[i] = GeneralizeMapKeyToString(v)
+		}
+		res = slice
+	case map[string]interface{}:
+		m := make(map[string]interface{})
+		for k, v := range element {
+			m[k] = GeneralizeMapKeyToString(v)
+		}
+		res = m
+	default:
+		res = input
 	}
 
 	return res
