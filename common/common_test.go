@@ -807,3 +807,31 @@ func TestExtractSchemeFromURL_WithHTTP(t *testing.T) {
 func TestExtractSchemeFromURL_WithHTTPS(t *testing.T) {
 	assert.Equal(t, "https", ExtractSchemeFromURL("https://localhost"))
 }
+
+func TestGetLocale_WithoutEnvVariables(t *testing.T) {
+	assert.Equal(t, "*::*::*::*", GetLocale())
+}
+
+func TestGetLocale_WithRealm(t *testing.T) {
+	os.Setenv("REALM", "ut-realm")
+	defer os.Setenv("REALM", "")
+	assert.Equal(t, "ut-realm::*::*::*", GetLocale())
+}
+
+func TestGetLocale_WithRegion(t *testing.T) {
+	os.Setenv("REGION", "ut-region")
+	defer os.Setenv("REGION", "")
+	assert.Equal(t, "*::ut-region::*::*", GetLocale())
+}
+
+func TestGetLocale_WithAZ(t *testing.T) {
+	os.Setenv("AZ", "ut-az")
+	defer os.Setenv("AZ", "")
+	assert.Equal(t, "*::*::ut-az::*", GetLocale())
+}
+
+func TestGetLocale_WithDomain(t *testing.T) {
+	os.Setenv("DOMAIN", "ut-domain")
+	defer os.Setenv("DOMAIN", "")
+	assert.Equal(t, "*::*::*::ut-domain", GetLocale())
+}

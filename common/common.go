@@ -166,6 +166,18 @@ func ShutdownWithError(err error) {
 	panic(err)
 }
 
+// Get locale from environment variable
+func GetLocale() string {
+	elements := []string{
+		GetDefaultIfEmptyString(os.Getenv("REALM"), "*"),
+		GetDefaultIfEmptyString(os.Getenv("REGION"), "*"),
+		GetDefaultIfEmptyString(os.Getenv("AZ"), "*"),
+		GetDefaultIfEmptyString(os.Getenv("DOMAIN"), "*"),
+	}
+
+	return strings.Join(elements, "::")
+}
+
 // Read files with provided path, use working directory if given path is relative path.
 // Shutdown process if any error occurs, this should be used for MUST SUCCESS scenario like reading config files.
 func MustReadFile(filePath string) []byte {
