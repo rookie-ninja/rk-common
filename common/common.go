@@ -179,6 +179,26 @@ func GetLocale() string {
 }
 
 // Read files with provided path, use working directory if given path is relative path.
+// Ignoring error while reading.
+func TryReadFile(filePath string) []byte {
+	if len(filePath) < 1 {
+		return make([]byte, 0)
+	}
+
+	if !path.IsAbs(filePath) {
+		// Ignore error
+		wd, _ := os.Getwd()
+		filePath = path.Join(wd, filePath)
+	}
+
+	if bytes, err := ioutil.ReadFile(filePath); err != nil {
+		return bytes
+	} else {
+		return bytes
+	}
+}
+
+// Read files with provided path, use working directory if given path is relative path.
 // Shutdown process if any error occurs, this should be used for MUST SUCCESS scenario like reading config files.
 func MustReadFile(filePath string) []byte {
 	if len(filePath) < 1 {
