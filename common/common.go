@@ -6,7 +6,6 @@ package rkcommon
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -239,8 +238,6 @@ func GetDefaultIfEmptyString(origin, def string) string {
 	if len(origin) < 1 {
 		return def
 	}
-
-	context.Background()
 
 	return origin
 }

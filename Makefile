@@ -1,5 +1,10 @@
 .PHONY: all
-all: test lint readme fmt
+all: buf test lint readme fmt
+
+.PHONY: buf
+buf:
+	@echo "running buf..."
+	@buf generate
 
 .PHONY: lint
 lint:
