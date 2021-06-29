@@ -14,8 +14,8 @@ type ErrorResp struct {
 func New(opts ...Option) *ErrorResp {
 	resp := &ErrorResp{
 		Err: &Error{
-			Code: http.StatusInternalServerError,
-			Status: http.StatusText(http.StatusInternalServerError),
+			Code:    http.StatusInternalServerError,
+			Status:  http.StatusText(http.StatusInternalServerError),
 			Details: make([]interface{}, 0),
 		},
 	}
@@ -31,8 +31,8 @@ type Option func(*ErrorResp)
 func FromError(err error) *ErrorResp {
 	return &ErrorResp{
 		Err: &Error{
-			Code: http.StatusInternalServerError,
-			Status: http.StatusText(http.StatusInternalServerError),
+			Code:    http.StatusInternalServerError,
+			Status:  http.StatusText(http.StatusInternalServerError),
 			Details: make([]interface{}, 0),
 			Message: err.Error(),
 		},
