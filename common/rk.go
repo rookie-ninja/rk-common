@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	RkMetaFilePath = ".rk/"
+	RkMetaFilePath = ".rk/rk.yaml"
 	RkDepFilePath = ".rk/dep/go.mod"
 	RkUtHtmlFilePath = ".rk/ut/cov.html"
 	RkUtOutFilepath = ".rk/ut/cov.out"
