@@ -281,11 +281,11 @@ func GetLocalIP() string {
 	return localIP
 }
 
-// Get hostname of localhost, return "unknown" if error occurs or hostname is empty.
+// Get hostname of localhost, return "" if error occurs or hostname is empty.
 func GetLocalHostname() string {
 	hostname, err := os.Hostname()
 	if err != nil || len(hostname) < 1 {
-		hostname = "unknown"
+		hostname = ""
 	}
 
 	return hostname
