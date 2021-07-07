@@ -515,36 +515,19 @@ func MatchLocaleWithEnv(locale string) bool {
 		return false
 	}
 
-	// validate realm
-	realmFromEnv := os.Getenv("REALM")
-	realmFromUser := tokens[0]
+	realmFromEnv := GetDefaultIfEmptyString(os.Getenv("REALM"), "*")
+	regionFromEnv := GetDefaultIfEmptyString(os.Getenv("REGION"), "*")
+	azFromEnv := GetDefaultIfEmptyString(os.Getenv("AZ"), "*")
+	domainFromEnv := GetDefaultIfEmptyString(os.Getenv("DOMAIN"), "*")
 
-	if len(realmFromEnv) > 0 && realmFromEnv != realmFromUser && realmFromUser != "*" {
-		return false
-	}
+	localeFromEnv := strings.Join([]string{
+		realmFromEnv,
+		regionFromEnv,
+		azFromEnv,
+		domainFromEnv,
+	}, "::")
 
-	regionFromEnv := os.Getenv("REGION")
-	regionFromUser := tokens[1]
-
-	if len(regionFromEnv) > 0 && regionFromEnv != regionFromUser && regionFromUser != "*" {
-		return false
-	}
-
-	azFromEnv := os.Getenv("AZ")
-	azFromUser := tokens[2]
-
-	if len(azFromEnv) > 0 && azFromEnv != azFromUser && azFromUser != "*" {
-		return false
-	}
-
-	domainFromEnv := os.Getenv("DOMAIN")
-	domainFromUser := tokens[3]
-
-	if len(domainFromEnv) > 0 && domainFromEnv != domainFromUser && domainFromUser != "*" {
-		return false
-	}
-
-	return true
+	return localeFromEnv == locale || locale == "*::*::*::*"
 }
 
 // Extract username from basic auth formed as <username>:<password>
