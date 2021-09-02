@@ -1,6 +1,9 @@
 # rk-common
 The common library mainly used by rk-entry.
 
+[![build](https://github.com/rookie-ninja/rk-common/actions/workflows/ci.yml/badge.svg)](https://github.com/rookie-ninja/rk-common/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
@@ -74,4 +77,4 @@ dongxuny@gmail.com. That email list is a private, safe space; even the zap
 maintainers don't have access, so don't hesitate to hold us to a high
 standard.
 
-Released under the [MIT License](LICENSE).
+Released under the [Apache 2.0 License](LICENSE).
