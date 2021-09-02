@@ -1,3 +1,7 @@
+// Copyright (c) 2021 rookie-ninja
+//
+// Use of this source code is governed by an Apache-style
+// license that can be found in the LICENSE file.
 package rkerror
 
 import (
@@ -34,8 +38,8 @@ func BaseErrorWrapper(code codes.Code) ErrorWrapper {
 
 		// Inject grpc error as detail
 		st, _ = st.WithDetails(&rk_error.ErrorDetail{
-			Code: int32(code),
-			Status: code.String(),
+			Code:    int32(code),
+			Status:  code.String(),
 			Message: fmt.Sprintf("[from-grpc] %s", msg),
 		})
 

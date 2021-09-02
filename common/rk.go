@@ -1,6 +1,6 @@
 // Copyright (c) 2021 rookie-ninja
 //
-// Use of this source code is governed by an MIT-style
+// Use of this source code is governed by an Apache-style
 // license that can be found in the LICENSE file.
 package rkcommon
 
@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	RkMetaFilePath = ".rk/rk.yaml"
-	RkDepFilePath = ".rk/dep/go.mod"
-	RkUtHtmlFilePath = ".rk/ut/cov.html"
-	RkUtOutFilepath = ".rk/ut/cov.out"
+	RkMetaFilePath    = ".rk/rk.yaml"
+	RkDepFilePath     = ".rk/dep/go.mod"
+	RkUtHtmlFilePath  = ".rk/ut/cov.html"
+	RkUtOutFilepath   = ".rk/ut/cov.out"
 	RkLicenseFilePath = ".rk/LICENSE"
-	RkReadmeFilePath = ".rk/README.md"
+	RkReadmeFilePath  = ".rk/README.md"
 )
 
 var (
@@ -54,23 +54,23 @@ var (
 )
 
 type RkMeta struct {
-	Name             string `json:"name" yaml:"name"`
-	Version          string `json:"version" yaml:"version"`
-	Git              *Git   `json:"git" yaml:"git"`
+	Name    string `json:"name" yaml:"name"`
+	Version string `json:"version" yaml:"version"`
+	Git     *Git   `json:"git" yaml:"git"`
 }
 
 type Git struct {
-	Url     string `yaml:"url" json:"url"`
-	Branch  string `yaml:"branch" json:"branch"`
-	Tag     string `yaml:"tag" json:"tag"`
-	Commit  *Commit `yaml:"commit" json:"commit"`
+	Url    string  `yaml:"url" json:"url"`
+	Branch string  `yaml:"branch" json:"branch"`
+	Tag    string  `yaml:"tag" json:"tag"`
+	Commit *Commit `yaml:"commit" json:"commit"`
 }
 
 type Commit struct {
-	Id        string `yaml:"id" json:"id"`
-	Date      string `yaml:"date" json:"date"`
-	IdAbbr    string `yaml:"idAbbr" json:"idAbbr"`
-	Sub       string `yaml:"sub" json:"sub"`
+	Id        string     `yaml:"id" json:"id"`
+	Date      string     `yaml:"date" json:"date"`
+	IdAbbr    string     `yaml:"idAbbr" json:"idAbbr"`
+	Sub       string     `yaml:"sub" json:"sub"`
 	Committer *Committer `yaml:"committer" json:"committer"`
 }
 
@@ -199,7 +199,6 @@ func GetGoPkgName() string {
 	}
 
 	return res
-
 
 	return path.Base(GetGoEnv().GoMod)
 }
