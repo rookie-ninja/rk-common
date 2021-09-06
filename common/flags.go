@@ -2,6 +2,7 @@
 //
 // Use of this source code is governed by an Apache-style
 // license that can be found in the LICENSE file.
+
 package rkcommon
 
 import (
@@ -14,6 +15,7 @@ import (
 )
 
 var (
+	// GlobalFlags will read pflags passed while starting main entry
 	GlobalFlags *pflag.FlagSet
 )
 
@@ -54,13 +56,14 @@ const (
 // 3: Using equal sign(=) to distinguish key and value.
 // 4: Using dot(.) to access map in YAML file.
 func init() {
+	// GlobalFlags will continue with error
 	GlobalFlags = pflag.NewFlagSet("rk", pflag.ContinueOnError)
 	GlobalFlags.String(BootConfigPathFlagKey, "", "set config file path")
 	GlobalFlags.String(BootConfigOverrideKey, "", "set values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	GlobalFlags.Parse(os.Args[1:])
 }
 
-// This function will do the following things.
+// GetBootConfigPath this function will do the following things.
 // First, override config file path if --rkboot <config file path> was provided by user.
 // Second, join path with current working directory if user provided path is relative path.
 // Finally, validate file existence, shutdown process if file is missing.
@@ -90,7 +93,7 @@ func GetBootConfigPath(configFilePath string) string {
 	return configFilePath
 }
 
-// This function will read user provided config content overrides and construct it into a map.
+// GetBootConfigOverrides this function will read user provided config content overrides and construct it into a map.
 func GetBootConfigOverrides() map[interface{}]interface{} {
 	bootConfigOverrides, err := GlobalFlags.GetString(BootConfigOverrideKey)
 
@@ -107,7 +110,7 @@ func GetBootConfigOverrides() map[interface{}]interface{} {
 	return res
 }
 
-// Read config file content and unmarshal into map.
+// GetBootConfigOriginal read config file content and unmarshal into map.
 func GetBootConfigOriginal(configFilePath string) map[interface{}]interface{} {
 	configFilePath = GetBootConfigPath(configFilePath)
 
@@ -126,7 +129,8 @@ func GetBootConfigOriginal(configFilePath string) map[interface{}]interface{} {
 	return originalMap
 }
 
-// This function is combination of GetBootConfigPath, GetBootConfigOverrides and GetBootConfigOriginal.
+// UnmarshalBootConfig this function is combination of GetBootConfigPath, GetBootConfigOverrides and
+// GetBootConfigOriginal.
 // User who want to implement his/her own entry, may use this function to parse YAML config into struct.
 // This function would also parse --rkset flags.
 //

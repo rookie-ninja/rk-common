@@ -2,17 +2,134 @@
 //
 // Use of this source code is governed by an Apache-style
 // license that can be found in the LICENSE file.
+
 package rkcommon
 
 import (
 	"errors"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"io/ioutil"
 	"os"
 	"path"
+	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestRandString(t *testing.T) {
+	assert.Len(t, RandString(10), 10)
+}
+
+func TestOverrideLumberjackConfig_WithNilTarget(t *testing.T) {
+	originOne := &lumberjack.Logger{}
+	originTwo := &lumberjack.Logger{}
+	OverrideLumberjackConfig(originOne, nil)
+	assert.Equal(t, originOne, originTwo)
+}
+
+func TestOverrideLumberjackConfig_HappyCase(t *testing.T) {
+	origin := &lumberjack.Logger{}
+	override := &lumberjack.Logger{
+		Compress:   true,
+		LocalTime:  false,
+		MaxAge:     1000,
+		MaxBackups: 1000,
+		MaxSize:    1000,
+		Filename:   "ut-file-name",
+	}
+	OverrideLumberjackConfig(origin, override)
+	assert.Equal(t, origin, override)
+}
+
+func TestOverrideLumberjackConfig_WithSame(t *testing.T) {
+	origin := &lumberjack.Logger{}
+	override := &lumberjack.Logger{}
+	OverrideLumberjackConfig(origin, override)
+	assert.Equal(t, origin, override)
+}
+
+func TestOverrideZapConfig_WithNilOverride(t *testing.T) {
+	originOne := &zap.Config{}
+	originTwo := &zap.Config{}
+
+	OverrideZapConfig(originOne, nil)
+	assert.Equal(t, originOne, originTwo)
+}
+
+func TestOverrideZapConfig_WithSame(t *testing.T) {
+	origin := &zap.Config{}
+	override := &zap.Config{}
+
+	OverrideZapConfig(origin, override)
+	assert.Equal(t, origin, override)
+}
+
+func TestOverrideZapConfig_HappyCase(t *testing.T) {
+	origin := &zap.Config{
+		Level: zap.NewAtomicLevelAt(zapcore.InfoLevel),
+	}
+	override := &zap.Config{
+		Development:       true,
+		DisableCaller:     true,
+		DisableStacktrace: true,
+		Encoding:          "json",
+		Level:             zap.NewAtomicLevelAt(zapcore.DebugLevel),
+		InitialFields:     map[string]interface{}{"key": "value"},
+		ErrorOutputPaths:  []string{"logs"},
+		OutputPaths:       []string{"logs"},
+		Sampling:          &zap.SamplingConfig{},
+		EncoderConfig: zapcore.EncoderConfig{
+			CallerKey:        "ut-caller",
+			ConsoleSeparator: "ut-separator",
+			EncodeCaller:     func(caller zapcore.EntryCaller, encoder zapcore.PrimitiveArrayEncoder) {},
+			EncodeDuration:   func(duration time.Duration, encoder zapcore.PrimitiveArrayEncoder) {},
+			EncodeLevel:      func(level zapcore.Level, encoder zapcore.PrimitiveArrayEncoder) {},
+			EncodeName:       func(s string, encoder zapcore.PrimitiveArrayEncoder) {},
+			EncodeTime:       func(t time.Time, encoder zapcore.PrimitiveArrayEncoder) {},
+			MessageKey:       "ut-message",
+			LevelKey:         "ut-level",
+			TimeKey:          "ut-time",
+			NameKey:          "ut-name",
+			FunctionKey:      "ut-func",
+			StacktraceKey:    "ut-stack",
+			LineEnding:       "ut-line",
+		},
+	}
+
+	OverrideZapConfig(origin, override)
+	assert.Equal(t, override.Development, origin.Development)
+	assert.Equal(t, override.DisableCaller, origin.DisableCaller)
+	assert.Equal(t, override.DisableStacktrace, origin.DisableStacktrace)
+	assert.Equal(t, override.Encoding, origin.Encoding)
+	assert.Equal(t, override.Level.String(), origin.Level.String())
+	assert.Equal(t, override.InitialFields, origin.InitialFields)
+	assert.Equal(t, override.ErrorOutputPaths, origin.ErrorOutputPaths)
+	assert.Equal(t, override.OutputPaths, origin.OutputPaths)
+	assert.Equal(t, override.Sampling, origin.Sampling)
+	assert.Equal(t, override.EncoderConfig.CallerKey, origin.EncoderConfig.CallerKey)
+	assert.Equal(t, override.EncoderConfig.ConsoleSeparator, origin.EncoderConfig.ConsoleSeparator)
+	assert.Equal(t, reflect.ValueOf(override.EncoderConfig.EncodeCaller),
+		reflect.ValueOf(origin.EncoderConfig.EncodeCaller))
+	assert.Equal(t, reflect.ValueOf(override.EncoderConfig.EncodeDuration),
+		reflect.ValueOf(origin.EncoderConfig.EncodeDuration))
+	assert.Equal(t, reflect.ValueOf(override.EncoderConfig.EncodeLevel),
+		reflect.ValueOf(origin.EncoderConfig.EncodeLevel))
+	assert.Equal(t, reflect.ValueOf(override.EncoderConfig.EncodeName),
+		reflect.ValueOf(origin.EncoderConfig.EncodeName))
+	assert.Equal(t, reflect.ValueOf(override.EncoderConfig.EncodeTime),
+		reflect.ValueOf(origin.EncoderConfig.EncodeTime))
+	assert.Equal(t, override.EncoderConfig.MessageKey, origin.EncoderConfig.MessageKey)
+	assert.Equal(t, override.EncoderConfig.LevelKey, origin.EncoderConfig.LevelKey)
+	assert.Equal(t, override.EncoderConfig.TimeKey, origin.EncoderConfig.TimeKey)
+	assert.Equal(t, override.EncoderConfig.NameKey, origin.EncoderConfig.NameKey)
+	assert.Equal(t, override.EncoderConfig.FunctionKey, origin.EncoderConfig.FunctionKey)
+	assert.Equal(t, override.EncoderConfig.StacktraceKey, origin.EncoderConfig.StacktraceKey)
+	assert.Equal(t, override.EncoderConfig.LineEnding, origin.EncoderConfig.LineEnding)
+}
 
 func TestGetDefaultIfEmptyString_ExpectDefault(t *testing.T) {
 	def := "unit-test-default"
@@ -34,10 +151,26 @@ func TestFileExists_ExpectTrue(t *testing.T) {
 func TestFileExists_ExpectFalse(t *testing.T) {
 	filePath := path.Join(t.TempDir(), "ui-TestFileExist-ExpectFalse")
 	assert.False(t, FileExists(filePath))
+	assert.False(t, FileExists(t.TempDir()))
 }
 
 func TestFileExists_WithEmptyFilePath(t *testing.T) {
 	assert.False(t, FileExists(""))
+}
+
+func TestTryReadFile_WithEmptyFilePath(t *testing.T) {
+	assert.Empty(t, TryReadFile(""))
+}
+
+func TestTryReadFile_WithRelativeInvalidPath(t *testing.T) {
+	assert.Empty(t, TryReadFile("non-exist-file"))
+}
+
+func TestTryReadFile_HappyCase(t *testing.T) {
+	tempDir := path.Join(t.TempDir(), "ut-file.txt")
+	assert.Nil(t, ioutil.WriteFile(tempDir, []byte("UT content."), os.ModePerm))
+
+	assert.NotEmpty(t, TryReadFile(tempDir))
 }
 
 func TestShutdownWithError_WithNilError(t *testing.T) {
@@ -150,6 +283,7 @@ func TestGenerateRequestId_HappyCase(t *testing.T) {
 
 func TestGenerateRequestIdWithPrefix_HappyCase(t *testing.T) {
 	assert.True(t, strings.HasPrefix(GenerateRequestIdWithPrefix("unit-test"), "unit-test"))
+	assert.NotEmpty(t, GenerateRequestIdWithPrefix(""))
 }
 
 func TestOverrideMap_WithNilSource(t *testing.T) {
@@ -292,6 +426,41 @@ func TestOverrideMap_WithHappyCase(t *testing.T) {
 	assert.NotNil(t, "override", innerStruct.(*MyStruct).Key)
 }
 
+func TestOverrideMap_WithGenericType(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			// this should never be called in case of a bug
+			assert.True(t, false)
+		} else {
+			// no panic expected
+			assert.True(t, true)
+		}
+	}()
+
+	type MyStruct struct {
+		Key string
+	}
+
+	// no panic expected
+	src := make(map[interface{}]interface{})
+	src["ut-generic-list"] = []*MyStruct{}
+	src["ut-generic-map"] = map[string]*MyStruct{}
+
+	override := make(map[interface{}]interface{})
+	override["ut-generic-list"] = []*MyStruct{
+		{Key: "key"},
+	}
+	override["ut-generic-map"] = map[string]*MyStruct{
+		"map-key": {Key: "key"},
+	}
+
+	OverrideMap(src, override)
+
+	// source map should be changed
+	assert.Equal(t, override["ut-generic-list"], src["ut-generic-list"])
+	assert.Equal(t, override["ut-generic-map"], src["ut-generic-map"])
+}
+
 func TestOverrideSlice_WithNilSource(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -372,6 +541,37 @@ func TestOverrideSlice_WithMixedType(t *testing.T) {
 	assert.Len(t, override, 2)
 	assert.Equal(t, "override-str", src[0])
 	assert.Equal(t, false, src[1])
+}
+
+func TestOverrideSlice_WithGenericType(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			// this should never be called in case of a bug
+			assert.True(t, false)
+		} else {
+			// no panic expected
+			assert.True(t, true)
+		}
+	}()
+
+	type MyStruct struct {
+		Key string
+	}
+
+	// no panic expected
+	src := []interface{}{
+		[]*MyStruct{},
+		map[string]*MyStruct{},
+	}
+
+	override := []interface{}{
+		[]*MyStruct{{Key: "key"}},
+		map[string]*MyStruct{"map-key": {Key: "key"}},
+	}
+
+	OverrideSlice(src, override)
+
+	assert.Equal(t, src, override)
 }
 
 func TestOverrideSlice_WithHappyCase(t *testing.T) {
@@ -834,4 +1034,52 @@ func TestGetLocale_WithDomain(t *testing.T) {
 	os.Setenv("DOMAIN", "ut-domain")
 	defer os.Setenv("DOMAIN", "")
 	assert.Equal(t, "*::*::*::ut-domain", GetLocale())
+}
+
+func TestGeneralizeMapKeyToString_WithNormalCase(t *testing.T) {
+	assert.Equal(t, "ut-key", GeneralizeMapKeyToString("ut-key"))
+}
+
+func TestGeneralizeMapKeyToString_WithNestedMap(t *testing.T) {
+	input := map[interface{}]map[interface{}]interface{}{
+		"outer": {"inner": "value"},
+	}
+
+	res := GeneralizeMapKeyToString(input).(map[interface{}]map[interface{}]interface{})
+
+	for k, v := range res {
+		assert.IsType(t, "", k)
+		for k1 := range v {
+			assert.IsType(t, "", k1)
+		}
+	}
+}
+
+func TestGeneralizeMapKeyToString_WithNestedStringMap(t *testing.T) {
+	input := map[string]map[interface{}]interface{}{
+		"outer": {"inner": "value"},
+	}
+
+	res := GeneralizeMapKeyToString(input).(map[string]map[interface{}]interface{})
+
+	for k, v := range res {
+		assert.IsType(t, "", k)
+		for k1 := range v {
+			assert.IsType(t, "", k1)
+		}
+	}
+}
+
+func TestGeneralizeMapKeyToString_WithNestedSlice(t *testing.T) {
+	input := []map[interface{}]interface{}{
+		{"key": "value"},
+	}
+
+	res := GeneralizeMapKeyToString(input).([]map[interface{}]interface{})
+
+	for i := range res {
+		for k1 := range res[i] {
+			assert.IsType(t, "", k1)
+		}
+	}
 }

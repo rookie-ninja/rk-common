@@ -2,6 +2,8 @@
 //
 // Use of this source code is governed by an Apache-style
 // license that can be found in the LICENSE file.
+
+// Package rkcommon defines utility functions for rk series of packages.
 package rkcommon
 
 import (
@@ -24,7 +26,7 @@ import (
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-// Generate random string.
+// RandString generate random string.
 func RandString(n int) string {
 	b := make([]byte, n)
 	for i := range b {
@@ -33,7 +35,7 @@ func RandString(n int) string {
 	return string(b)
 }
 
-// Override lumberjack config.
+// OverrideLumberjackConfig override lumberjack config.
 // This function will override fields of non empty and non-nil.
 func OverrideLumberjackConfig(origin *lumberjack.Logger, override *lumberjack.Logger) {
 	if override == nil {
@@ -58,7 +60,7 @@ func OverrideLumberjackConfig(origin *lumberjack.Logger, override *lumberjack.Lo
 	}
 }
 
-// Override zap config.
+// OverrideZapConfig overrides zap config.
 // This function will override fields of non empty and non-nil.
 func OverrideZapConfig(origin *zap.Config, override *zap.Config) {
 	if override == nil {
@@ -140,10 +142,6 @@ func OverrideZapConfig(origin *zap.Config, override *zap.Config) {
 		origin.EncoderConfig.NameKey = override.EncoderConfig.NameKey
 	}
 
-	if len(override.EncoderConfig.CallerKey) > 0 {
-		origin.EncoderConfig.CallerKey = override.EncoderConfig.CallerKey
-	}
-
 	if len(override.EncoderConfig.FunctionKey) > 0 {
 		origin.EncoderConfig.FunctionKey = override.EncoderConfig.FunctionKey
 	}
@@ -157,7 +155,7 @@ func OverrideZapConfig(origin *zap.Config, override *zap.Config) {
 	}
 }
 
-// Shutdown and panic.
+// ShutdownWithError shuts down and panic.
 func ShutdownWithError(err error) {
 	if err == nil {
 		err = errors.New("error is nil")
@@ -165,7 +163,7 @@ func ShutdownWithError(err error) {
 	panic(err)
 }
 
-// Get locale from environment variable
+// GetLocale returns locale from environment variable
 func GetLocale() string {
 	elements := []string{
 		GetDefaultIfEmptyString(os.Getenv("REALM"), "*"),
@@ -177,7 +175,7 @@ func GetLocale() string {
 	return strings.Join(elements, "::")
 }
 
-// Read files with provided path, use working directory if given path is relative path.
+// TryReadFile reads files with provided path, use working directory if given path is relative path.
 // Ignoring error while reading.
 func TryReadFile(filePath string) []byte {
 	if len(filePath) < 1 {
@@ -197,7 +195,7 @@ func TryReadFile(filePath string) []byte {
 	}
 }
 
-// Read files with provided path, use working directory if given path is relative path.
+// MustReadFile read files with provided path, use working directory if given path is relative path.
 // Shutdown process if any error occurs, this should be used for MUST SUCCESS scenario like reading config files.
 func MustReadFile(filePath string) []byte {
 	if len(filePath) < 1 {
@@ -221,7 +219,7 @@ func MustReadFile(filePath string) []byte {
 	return bytes
 }
 
-// Check File existence, file path should be full path.
+// FileExists checks File existence, file path should be full path.
 func FileExists(filePath string) bool {
 	if file, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
@@ -233,7 +231,7 @@ func FileExists(filePath string) bool {
 	return true
 }
 
-// Return default value if original string is empty.
+// GetDefaultIfEmptyString returns default value if original string is empty.
 func GetDefaultIfEmptyString(origin, def string) string {
 	if len(origin) < 1 {
 		return def
@@ -242,7 +240,7 @@ func GetDefaultIfEmptyString(origin, def string) string {
 	return origin
 }
 
-// Return default value if environment variable is empty or not exist.
+// GetEnvValueOrDefault returns default value if environment variable is empty or not exist.
 func GetEnvValueOrDefault(key, defaultValue string) string {
 	value := os.Getenv(key)
 
@@ -253,6 +251,7 @@ func GetEnvValueOrDefault(key, defaultValue string) string {
 	return value
 }
 
+// GetLocalIP
 // This is a tricky function.
 // We will iterate through all the network interfaces，but will choose the first one since we are assuming that
 // eth0 will be the default one to use in most of the case.
@@ -281,7 +280,7 @@ func GetLocalIP() string {
 	return localIP
 }
 
-// Get hostname of localhost, return "" if error occurs or hostname is empty.
+// GetLocalHostname returns hostname of localhost, return "" if error occurs or hostname is empty.
 func GetLocalHostname() string {
 	hostname, err := os.Hostname()
 	if err != nil || len(hostname) < 1 {
@@ -291,7 +290,7 @@ func GetLocalHostname() string {
 	return hostname
 }
 
-// Generate request id based on google/uuid.
+// GenerateRequestId generate request id based on google/uuid.
 // UUIDs are based on RFC 4122 and DCE 1.1: Authentication and Security Services.
 //
 // A UUID is a 16 byte (128 bit) array. UUIDs may be used as keys to maps or compared directly.
@@ -307,7 +306,7 @@ func GenerateRequestId() string {
 	return requestId.String()
 }
 
-// Generate request id based on google/uuid.
+// GenerateRequestIdWithPrefix generate request id based on google/uuid.
 // UUIDs are based on RFC 4122 and DCE 1.1: Authentication and Security Services.
 //
 // A UUID is a 16 byte (128 bit) array. UUIDs may be used as keys to maps or compared directly.
@@ -327,7 +326,7 @@ func GenerateRequestIdWithPrefix(prefix string) string {
 	return requestId.String()
 }
 
-// Override source map with new map items.
+// OverrideMap override source map with new map items.
 // It will iterate through all items in map and check map and slice types of item to recursively override values
 //
 // Mainly used for unmarshalling YAML to map.
@@ -351,7 +350,7 @@ func OverrideMap(src map[interface{}]interface{}, override map[interface{}]inter
 	}
 }
 
-// Override source slice with new slice items.
+// OverrideSlice override source slice with new slice items.
 // It will iterate through all items in slice and check map and slice types of item to recursively override values
 //
 // Mainly used for unmarshalling YAML to map.
@@ -376,7 +375,7 @@ func OverrideSlice(src []interface{}, override []interface{}) {
 	}
 }
 
-// Convert JSON style string to map[string]interface{}.
+// ConvertJSONToMap convert JSON style string to map[string]interface{}.
 // Return empty map if length of input parameter is less than 2 which can not construct
 // a valid JSON string.
 func ConvertJSONToMap(str string) map[string]interface{} {
@@ -390,7 +389,7 @@ func ConvertJSONToMap(str string) map[string]interface{} {
 	return res
 }
 
-// Marshal struct to json string.
+// ConvertStructToJSON marshal struct to json string.
 // Return empty string if input parameter is nil.
 func ConvertStructToJSON(src interface{}) string {
 	if src == nil {
@@ -400,7 +399,7 @@ func ConvertStructToJSON(src interface{}) string {
 	return string(ConvertStructToBytes(src))
 }
 
-// Marshal struct to pretty json string.
+// ConvertStructToJSONPretty marshal struct to pretty json string.
 // Return empty string if input parameter is nil.
 func ConvertStructToJSONPretty(src interface{}) string {
 	if src == nil {
@@ -416,7 +415,7 @@ func ConvertStructToJSONPretty(src interface{}) string {
 	return dest.String()
 }
 
-// Marshal struct to bytes.
+// ConvertStructToBytes marshal struct to bytes.
 // Return empty byte slice if input parameter is nil.
 func ConvertStructToBytes(src interface{}) []byte {
 	if src == nil {
@@ -426,7 +425,7 @@ func ConvertStructToBytes(src interface{}) []byte {
 	return bytes
 }
 
-// Convert struct to map.
+// ConvertStructToMap convert struct to map.
 // Return empty map if input parameter is nil.
 func ConvertStructToMap(src interface{}) map[string]interface{} {
 	res := make(map[string]interface{})
@@ -445,7 +444,7 @@ func ConvertStructToMap(src interface{}) map[string]interface{} {
 	return res
 }
 
-// Convert struct to zap fields.
+// ConvertStructToZapFields convert struct to zap fields.
 // Return empty zap.Field array if input parameter is nil.
 func ConvertStructToZapFields(src interface{}) []zap.Field {
 	fields := make([]zap.Field, 0)
@@ -461,7 +460,7 @@ func ConvertStructToZapFields(src interface{}) []zap.Field {
 	return fields
 }
 
-// Mainly used in entry config.
+// MatchLocaleWithEnv mainly used in entry config.
 // RK use <realm>::<region>::<az>::<domain> to distinguish different environment.
 // Variable of <locale> could be composed as form of <realm>::<region>::<az>::<domain>
 // - realm: It could be a company, department and so on, like RK-Corp.
@@ -469,12 +468,14 @@ func ConvertStructToZapFields(src interface{}) []zap.Field {
 //          Eg: RK-Corp
 //          Wildcard: supported
 //
-// - region: Please see AWS web site: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
+// - region: Please see AWS web site:
+//   https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
 //           Environment variable: REGION
 //           Eg: us-east
 //           Wildcard: supported
 //
-// - az: Availability zone, please see AWS web site for details: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
+// - az: Availability zone, please see AWS web site for details:
+//  https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
 //       Environment variable: AZ
 //       Eg: us-east-1
 //       Wildcard: supported
@@ -530,7 +531,7 @@ func MatchLocaleWithEnv(locale string) bool {
 	return localeFromEnv == locale || locale == "*::*::*::*"
 }
 
-// Extract username from basic auth formed as <username>:<password>
+// GetUsernameFromBasicAuthString extract username from basic auth formed as <username>:<password>
 func GetUsernameFromBasicAuthString(basicAuth string) string {
 	tokens := strings.Split(basicAuth, ":")
 	if len(tokens) != 2 {
@@ -540,7 +541,7 @@ func GetUsernameFromBasicAuthString(basicAuth string) string {
 	return tokens[0]
 }
 
-// Extract password from basic auth formed as <username>:<password>
+// GetPasswordFromBasicAuthString extract password from basic auth formed as <username>:<password>
 func GetPasswordFromBasicAuthString(basicAuth string) string {
 	tokens := strings.Split(basicAuth, ":")
 	if len(tokens) != 2 {
@@ -550,7 +551,7 @@ func GetPasswordFromBasicAuthString(basicAuth string) string {
 	return tokens[1]
 }
 
-// Extract scheme from endpoint
+// ExtractSchemeFromURL extract scheme from endpoint
 func ExtractSchemeFromURL(url string) string {
 	res := ""
 	if strings.HasPrefix(url, "http://") {
@@ -562,7 +563,7 @@ func ExtractSchemeFromURL(url string) string {
 	return res
 }
 
-// Convert map key to printable one.
+// GeneralizeMapKeyToString convert map key to printable one.
 func GeneralizeMapKeyToString(input interface{}) interface{} {
 	var res interface{}
 
