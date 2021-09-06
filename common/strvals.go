@@ -18,7 +18,7 @@ import (
 // ErrNotList indicates that a non-list was treated as a list.
 var ErrNotList = errors.New("not a list")
 
-// Parse parses a set line.
+// ParseBootConfigOverrides parses a set line.
 //
 // A set line is of the form name1=value1,name2=value2
 func ParseBootConfigOverrides(s string) (map[interface{}]interface{}, error) {

@@ -2,6 +2,7 @@
 //
 // Use of this source code is governed by an Apache-style
 // license that can be found in the LICENSE file.
+
 package rkcommon
 
 import (
@@ -14,38 +15,45 @@ import (
 )
 
 const (
-	RkMetaFilePath    = ".rk/rk.yaml"
-	RkDepFilePath     = ".rk/dep/go.mod"
-	RkUtHtmlFilePath  = ".rk/ut/cov.html"
-	RkUtOutFilepath   = ".rk/ut/cov.out"
+	// RkMetaFilePath used in rk cli
+	RkMetaFilePath = ".rk/rk.yaml"
+	// RkDepFilePath used in rk cli
+	RkDepFilePath = ".rk/dep/go.mod"
+	// RkUtHtmlFilePath used in rk cli
+	RkUtHtmlFilePath = ".rk/ut/cov.html"
+	// RkUtOutFilepath used in rk cli
+	RkUtOutFilepath = ".rk/ut/cov.out"
+	// RkLicenseFilePath used in rk cli
 	RkLicenseFilePath = ".rk/LICENSE"
-	RkReadmeFilePath  = ".rk/README.md"
+	// RkReadmeFilePath used in rk cli
+	RkReadmeFilePath = ".rk/README.md"
 )
 
 var (
+	// GetPackageNameArgs used in rk cli for reading local git meta info
 	GetPackageNameArgs = []string{
 		"rev-parse",
 		"--show-toplevel",
 	}
-
+	// GetCurrentTagArgs used in rk cli for reading local git meta info
 	GetCurrentTagArgs = []string{
 		"tag",
 		"--points-at",
 		"HEAD",
 	}
-
+	// GetRemoteUrlArgs used in rk cli for reading local git meta info
 	GetRemoteUrlArgs = []string{
 		"config",
 		"--get",
 		"remote.origin.url",
 	}
-
+	// GetBranchArgs used in rk cli for reading local git meta info
 	GetBranchArgs = []string{
 		"rev-parse",
 		"--abbrev-ref",
 		"HEAD",
 	}
-
+	// GetLatestCommitArgs used in rk cli for reading local git meta info
 	GetLatestCommitArgs = []string{
 		"log",
 		"-n1",
@@ -53,32 +61,51 @@ var (
 	}
 )
 
+// RkMeta would be extracted by rk cli
 type RkMeta struct {
-	Name    string `json:"name" yaml:"name"`
+	// Name of application
+	Name string `json:"name" yaml:"name"`
+	// Version of application
 	Version string `json:"version" yaml:"version"`
-	Git     *Git   `json:"git" yaml:"git"`
+	// Git meta info
+	Git *Git `json:"git" yaml:"git"`
 }
 
+// Git metadata info on local machine
 type Git struct {
-	Url    string  `yaml:"url" json:"url"`
-	Branch string  `yaml:"branch" json:"branch"`
-	Tag    string  `yaml:"tag" json:"tag"`
+	// Url of git repo
+	Url string `yaml:"url" json:"url"`
+	// Branch of git repo
+	Branch string `yaml:"branch" json:"branch"`
+	// Tag of git repo
+	Tag string `yaml:"tag" json:"tag"`
+	// Commit info of git repo
 	Commit *Commit `yaml:"commit" json:"commit"`
 }
 
+// Commit of git from local machine
 type Commit struct {
-	Id        string     `yaml:"id" json:"id"`
-	Date      string     `yaml:"date" json:"date"`
-	IdAbbr    string     `yaml:"idAbbr" json:"idAbbr"`
-	Sub       string     `yaml:"sub" json:"sub"`
+	// Id of current commit
+	Id string `yaml:"id" json:"id"`
+	// Date of current commit
+	Date string `yaml:"date" json:"date"`
+	// IdAbbr is abbreviation of id of current commit
+	IdAbbr string `yaml:"idAbbr" json:"idAbbr"`
+	// Sub is subject of current commit
+	Sub string `yaml:"sub" json:"sub"`
+	// Committer of current commit
 	Committer *Committer `yaml:"committer" json:"committer"`
 }
 
+// Committer info of current commit
 type Committer struct {
-	Name  string `yaml:"name" json:"name"`
+	// Name of committer
+	Name string `yaml:"name" json:"name"`
+	// Email of committer
 	Email string `yaml:"email" json:"email"`
 }
 
+// GetPackageNameFromGitLocal returns package name from git info on local machine
 func GetPackageNameFromGitLocal() (string, error) {
 	if v, err := exec.Command("git", GetPackageNameArgs...).CombinedOutput(); err != nil {
 		return "", err
@@ -87,6 +114,7 @@ func GetPackageNameFromGitLocal() (string, error) {
 	}
 }
 
+// GetCurrentTagFromGitLocal returns current tag info from git info on local machine
 func GetCurrentTagFromGitLocal() (string, error) {
 	if v, err := exec.Command("git", GetCurrentTagArgs...).CombinedOutput(); err != nil {
 		return "", err
@@ -95,6 +123,7 @@ func GetCurrentTagFromGitLocal() (string, error) {
 	}
 }
 
+// GetRemoteUrlFromGitLocal returns remote url from git info on local machine
 func GetRemoteUrlFromGitLocal() (string, error) {
 	if v, err := exec.Command("git", GetRemoteUrlArgs...).CombinedOutput(); err != nil {
 		return "", err
@@ -113,6 +142,7 @@ func GetRemoteUrlFromGitLocal() (string, error) {
 	return "", nil
 }
 
+// GetBranchFromGitLocal returns branch from git info on local machine
 func GetBranchFromGitLocal() (string, error) {
 	if v, err := exec.Command("git", GetBranchArgs...).CombinedOutput(); err != nil {
 		return "", nil
@@ -126,6 +156,7 @@ func GetBranchFromGitLocal() (string, error) {
 	return "", nil
 }
 
+// GetLatestCommitFromGitLocal returns latest commit info from git info on local machine
 func GetLatestCommitFromGitLocal() (*Commit, error) {
 	res := &Commit{}
 
@@ -140,49 +171,52 @@ func GetLatestCommitFromGitLocal() (*Commit, error) {
 	return res, nil
 }
 
+// GoEnv defines golang environment variables
 type GoEnv struct {
-	Ar          string `json:"AR"`
-	Cc          string `json:"CC"`
-	CgoCflags   string `json:"CGO_CFLAGS"`
-	CgoCppflags string `json:"CGO_CPPFLAGS"`
-	CgoCxxflags string `json:"CGO_CXXFLAGS"`
-	CgoEnabled  string `json:"CGO_ENABLED"`
-	CgoFflags   string `json:"CGO_FFLAGS"`
-	CgoLdflags  string `json:"CGO_LDFLAGS"`
-	Cxx         string `json:"CXX"`
-	GccGo       string `json:"GCCGO"`
-	Go111Module string `json:"GO111MODULE"`
-	GoArch      string `json:"GOARCH"`
-	GoBin       string `json:"GOBIN"`
-	Gocache     string `json:"GOCACHE"`
-	GoEnv       string `json:"GOENV"`
-	GoExe       string `json:"GOEXE"`
-	GoFlags     string `json:"GOFLAGS"`
-	GoGccFlags  string `json:"GOGCCFLAGS"`
-	GoHostArch  string `json:"GOHOSTARCH"`
-	GoHostOs    string `json:"GOHOSTOS"`
-	GoInsecure  string `json:"GOINSECURE"`
-	GoMod       string `json:"GOMOD"`
-	GoModCache  string `json:"GOMODCACHE"`
-	GoNoProxy   string `json:"GONOPROXY"`
-	GoNoSumDb   string `json:"GONOSUMDB"`
-	GoOs        string `json:"GOOS"`
-	GoPath      string `json:"GOPATH"`
-	GoPrivate   string `json:"GOPRIVATE"`
-	GoProxy     string `json:"GOPROXY"`
-	GoRoot      string `json:"GOROOT"`
-	GoSumDb     string `json:"GOSUMDB"`
-	GoTmpDir    string `json:"GOTMPDIR"`
-	GoToolDir   string `json:"GOTOOLDIR"`
-	GoVcs       string `json:"GOVCS"`
-	GoVersion   string `json:"GOVERSION"`
-	PkgConfig   string `json:"PKG_CONFIG"`
+	Ar          string `json:"AR"`           // Ar from Go environment
+	Cc          string `json:"CC"`           // Cc from Go environment
+	CgoCflags   string `json:"CGO_CFLAGS"`   // CgoCflags from Go environment
+	CgoCppflags string `json:"CGO_CPPFLAGS"` // CgoCppflags from Go environment
+	CgoCxxflags string `json:"CGO_CXXFLAGS"` // CgoCxxflags from Go environment
+	CgoEnabled  string `json:"CGO_ENABLED"`  // CgoEnabled from Go environment
+	CgoFflags   string `json:"CGO_FFLAGS"`   // CgoFflags from Go environment
+	CgoLdflags  string `json:"CGO_LDFLAGS"`  // CgoLdflags from Go environment
+	Cxx         string `json:"CXX"`          // Cxx from Go environment
+	GccGo       string `json:"GCCGO"`        // GccGo from Go environment
+	Go111Module string `json:"GO111MODULE"`  // Go111Module from Go environment
+	GoArch      string `json:"GOARCH"`       // GoArch from Go environment
+	GoBin       string `json:"GOBIN"`        // GoBin from Go environment
+	Gocache     string `json:"GOCACHE"`      // Gocache from Go environment
+	GoEnv       string `json:"GOENV"`        // GoEnv from Go environment
+	GoExe       string `json:"GOEXE"`        // GoExe from Go environment
+	GoFlags     string `json:"GOFLAGS"`      // GoFlags from Go environment
+	GoGccFlags  string `json:"GOGCCFLAGS"`   // GoGccFlags from Go environment
+	GoHostArch  string `json:"GOHOSTARCH"`   // GoHostArch from Go environment
+	GoHostOs    string `json:"GOHOSTOS"`     // GoHostOs from Go environment
+	GoInsecure  string `json:"GOINSECURE"`   // GoInsecure from Go environment
+	GoMod       string `json:"GOMOD"`        // GoMod from Go environment
+	GoModCache  string `json:"GOMODCACHE"`   // GoModCache from Go environment
+	GoNoProxy   string `json:"GONOPROXY"`    // GoNoProxy from Go environment
+	GoNoSumDb   string `json:"GONOSUMDB"`    // GoNoSumDb from Go environment
+	GoOs        string `json:"GOOS"`         // GoOs from Go environment
+	GoPath      string `json:"GOPATH"`       // GoPath from Go environment
+	GoPrivate   string `json:"GOPRIVATE"`    // GoPrivate from Go environment
+	GoProxy     string `json:"GOPROXY"`      // GoProxy from Go environment
+	GoRoot      string `json:"GOROOT"`       // GoRoot from Go environment
+	GoSumDb     string `json:"GOSUMDB"`      // GoSumDb from Go environment
+	GoTmpDir    string `json:"GOTMPDIR"`     // GoTmpDir from Go environment
+	GoToolDir   string `json:"GOTOOLDIR"`    // GoToolDir from Go environment
+	GoVcs       string `json:"GOVCS"`        // GoVcs from Go environment
+	GoVersion   string `json:"GOVERSION"`    // GoVersion from Go environment
+	PkgConfig   string `json:"PKG_CONFIG"`   // PkgConfig from Go environment
 }
 
+// GetGoWd return current working directory of golang
 func GetGoWd() string {
 	return path.Dir(GetGoEnv().GoMod)
 }
 
+// GetGoPkgName returns package name redden from go environment
 func GetGoPkgName() string {
 	res := ""
 	modFilePath := GetGoEnv().GoMod
@@ -203,6 +237,7 @@ func GetGoPkgName() string {
 	return path.Base(GetGoEnv().GoMod)
 }
 
+// GetGoEnv returns GoEnv variable
 func GetGoEnv() *GoEnv {
 	res := &GoEnv{}
 
@@ -215,6 +250,7 @@ func GetGoEnv() *GoEnv {
 	return res
 }
 
+// GetRkMetaFromCmd construct RkMeta from local environment
 func GetRkMetaFromCmd() *RkMeta {
 	meta := &RkMeta{}
 

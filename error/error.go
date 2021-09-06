@@ -2,19 +2,24 @@
 //
 // Use of this source code is governed by an Apache-style
 // license that can be found in the LICENSE file.
+
+// Package rkerror defines RK style API errors.
 package rkerror
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/codes"
 	"net/http"
 )
 
+// ErrorResp is standard rk style error
 type ErrorResp struct {
-	Err *Error `json:"error" yaml:"error"`
+	Err *Error `json:"error" yaml:"error"` // Err is RK style error type
 }
 
+// New a error response with options
 func New(opts ...Option) *ErrorResp {
 	resp := &ErrorResp{
 		Err: &Error{
@@ -30,9 +35,12 @@ func New(opts ...Option) *ErrorResp {
 	return resp
 }
 
-type Option func(*ErrorResp)
-
+// FromError converts error to ErrorResp
 func FromError(err error) *ErrorResp {
+	if err == nil {
+		err = errors.New("unknown error")
+	}
+
 	return &ErrorResp{
 		Err: &Error{
 			Code:    http.StatusInternalServerError,
@@ -43,6 +51,10 @@ func FromError(err error) *ErrorResp {
 	}
 }
 
+// Option is ErrorResp option
+type Option func(*ErrorResp)
+
+// WithDetails provides any type of error details into error response
 func WithDetails(details ...interface{}) Option {
 	return func(resp *ErrorResp) {
 		for i := range details {
@@ -62,6 +74,7 @@ func WithDetails(details ...interface{}) Option {
 	}
 }
 
+// WithHttpCode provides response code
 func WithHttpCode(code int) Option {
 	return func(resp *ErrorResp) {
 		resp.Err.Code = code
@@ -69,6 +82,7 @@ func WithHttpCode(code int) Option {
 	}
 }
 
+// WithHttpCode provides grpc response code
 func WithGrpcCode(code codes.Code) Option {
 	return func(resp *ErrorResp) {
 		resp.Err.Code = int(code)
@@ -76,6 +90,7 @@ func WithGrpcCode(code codes.Code) Option {
 	}
 }
 
+// WithCodeAndStatus provides http response code and status
 func WithCodeAndStatus(code int, status string) Option {
 	return func(resp *ErrorResp) {
 		resp.Err.Code = code
@@ -83,19 +98,22 @@ func WithCodeAndStatus(code int, status string) Option {
 	}
 }
 
+// WithMessage provides messages along with response
 func WithMessage(message string) Option {
 	return func(resp *ErrorResp) {
 		resp.Err.Message = message
 	}
 }
 
+// Error defines standard error types of rk style
 type Error struct {
-	Code    int           `json:"code" yaml:"code"`
-	Status  string        `json:"status" yaml:"status"`
-	Message string        `json:"message" yaml:"message"`
-	Details []interface{} `json:"details" yaml:"details"`
+	Code    int           `json:"code" yaml:"code"`       // Code represent codes in response
+	Status  string        `json:"status" yaml:"status"`   // Status represent string value of code
+	Message string        `json:"message" yaml:"message"` // Message represent detail message
+	Details []interface{} `json:"details" yaml:"details"` // Details is a list of details in any types in string
 }
 
+// Error returns string of error
 func (err *Error) Error() string {
 	return fmt.Sprintf("[%s] %s", err.Status, err.Message)
 }
