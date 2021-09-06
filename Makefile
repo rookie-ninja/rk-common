@@ -1,4 +1,3 @@
-
 .PHONY: all
 all: buf test lint readme fmt
 
