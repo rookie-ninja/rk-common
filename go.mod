@@ -4,8 +4,9 @@ go 1.14
 
 require (
 	github.com/gin-gonic/gin v1.7.2
+	github.com/go-git/go-billy/v5 v5.3.1
 	github.com/google/uuid v1.1.2
-	github.com/kr/text v0.2.0 // indirect
+	github.com/markbates/pkger v0.17.1
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/spf13/pflag v1.0.5
