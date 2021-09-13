@@ -16,3 +16,6 @@
 
 # For mac
 .idea
+
+# ut coverage
+coverage.txt
