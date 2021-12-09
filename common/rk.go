@@ -20,6 +20,17 @@ const (
 	RkReadmeFilePath = ".rk/README.md"
 )
 
+// NewRkMeta returns empty rk meta instance
+func NewRkMeta() *RkMeta {
+	return &RkMeta{
+		Git: &Git{
+			Commit: &Commit{
+				Committer: &Committer{},
+			},
+		},
+	}
+}
+
 // RkMeta would be extracted by rk cli
 type RkMeta struct {
 	// Name of application

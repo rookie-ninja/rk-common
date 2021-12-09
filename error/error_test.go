@@ -7,9 +7,7 @@ package rkerror
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc/codes"
 	"net/http"
 	"testing"
 )
@@ -24,22 +22,8 @@ func TestNew_WithoutOptions(t *testing.T) {
 }
 
 func TestNew_WithDetails(t *testing.T) {
-	// With gin error
-	ginErr := &gin.Error{
-		Type: gin.ErrorTypePublic,
-		Err:  errors.New("gin error"),
-		Meta: "gin meta",
-	}
-
-	res := New(WithDetails(ginErr))
-
-	assert.Equal(t, http.StatusInternalServerError, res.Err.Code)
-	assert.Equal(t, http.StatusText(http.StatusInternalServerError), res.Err.Status)
-	assert.Equal(t, "gin meta", res.Err.Details[0].(gin.H)["meta"])
-	assert.Equal(t, "gin error", res.Err.Details[0].(gin.H)["error"])
-
 	// With rk error type
-	res = New(WithDetails("rk error"))
+	res := New(WithDetails("rk error"))
 	assert.Equal(t, http.StatusInternalServerError, res.Err.Code)
 	assert.Equal(t, http.StatusText(http.StatusInternalServerError), res.Err.Status)
 	assert.Equal(t, "rk error", res.Err.Details[0])
@@ -62,20 +46,6 @@ func TestNew_WithHttpCode(t *testing.T) {
 
 	assert.Equal(t, http.StatusAlreadyReported, res.Err.Code)
 	assert.Equal(t, http.StatusText(http.StatusAlreadyReported), res.Err.Status)
-}
-
-func TestNew_WithGrpcCode(t *testing.T) {
-	res := New(WithGrpcCode(codes.Aborted))
-
-	assert.Equal(t, int(codes.Aborted), res.Err.Code)
-	assert.Equal(t, codes.Aborted.String(), res.Err.Status)
-}
-
-func TestNew_WithCodeAndStatus(t *testing.T) {
-	res := New(WithCodeAndStatus(-1, "ut-status"))
-
-	assert.Equal(t, -1, res.Err.Code)
-	assert.Equal(t, "ut-status", res.Err.Status)
 }
 
 func TestNew_WithMessage(t *testing.T) {

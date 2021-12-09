@@ -1,11 +1,5 @@
 .PHONY: all
-all: buf test lint doctoc fmt
-
-.PHONY: buf
-buf:
-	@echo "[buf] Running buf..."
-	@buf generate
-	@echo "------------------------------------[Done]"
+all: test lint doctoc fmt
 
 .PHONY: lint
 lint:

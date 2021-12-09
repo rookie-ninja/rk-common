@@ -9,8 +9,6 @@ package rkerror
 import (
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"google.golang.org/grpc/codes"
 	"net/http"
 )
 
@@ -61,8 +59,6 @@ func WithDetails(details ...interface{}) Option {
 			detail := details[i]
 
 			switch v := detail.(type) {
-			case *gin.Error:
-				resp.Err.Details = append(resp.Err.Details, v.JSON())
 			case *Error:
 				resp.Err.Details = append(resp.Err.Details, v.Details...)
 			case error:
@@ -79,22 +75,6 @@ func WithHttpCode(code int) Option {
 	return func(resp *ErrorResp) {
 		resp.Err.Code = code
 		resp.Err.Status = http.StatusText(code)
-	}
-}
-
-// WithHttpCode provides grpc response code
-func WithGrpcCode(code codes.Code) Option {
-	return func(resp *ErrorResp) {
-		resp.Err.Code = int(code)
-		resp.Err.Status = code.String()
-	}
-}
-
-// WithCodeAndStatus provides http response code and status
-func WithCodeAndStatus(code int, status string) Option {
-	return func(resp *ErrorResp) {
-		resp.Err.Code = code
-		resp.Err.Status = status
 	}
 }
 
